@@ -1,6 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { authClient } from '@/lib/auth-client'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -35,7 +37,14 @@ export default function Page() {
   const [showInvite, setShowInvite] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
   const [copied, setCopied] = useState(false)
+  const router = useRouter()
   const total = useMemo(() => expenses.reduce((sum, item) => sum + item.amount, 0), [])
+
+  async function handleSignOut() {
+    await authClient.signOut()
+    router.push('/sign-in')
+    router.refresh()
+  }
   const inviteLink = 'casal.app/entrar/8K4M2P'
 
   function copyInvite() {
@@ -73,6 +82,7 @@ export default function Page() {
           <nav className="space-y-1 text-sm font-medium">
             <button onClick={() => setShowInvite(true)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] hover:bg-white"><Share2 size={18} /> Compartilhar conta</button>
             <a className="flex items-center gap-3 rounded-xl px-4 py-3 text-[#727b77] hover:bg-white" href="#"><Settings size={18} /> Configurações</a>
+            <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] transition hover:bg-[#fff1ef] hover:text-[#a33c30]"><LogOut size={18} /> Sair da conta</button>
           </nav>
           <div className="mt-auto hidden rounded-2xl bg-[#e7f3d6] p-4 lg:block"><p className="mb-2 text-xs font-bold text-[#32513d]">Dica do mês</p><p className="text-xs leading-relaxed text-[#5d7561]">Vocês já economizaram 12% comparado ao mês passado.</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#c8dfaf]"><div className="h-full w-[72%] rounded-full bg-[#94bd53]" /></div></div>
         </aside>
