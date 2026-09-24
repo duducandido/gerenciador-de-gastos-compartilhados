@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric, unique } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, unique, serial, integer } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -86,6 +86,18 @@ export const household = pgTable('household', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
+export const savingsGoal = pgTable('savings_goals', {
+  id: serial('id').primaryKey(),
+  userId: text('userId').notNull(),
+  name: text('name').notNull(),
+  targetAmount: integer('targetAmount').notNull().default(0),
+  installmentAmount: integer('installmentAmount').notNull().default(0),
+  savedAmount: integer('savedAmount').notNull().default(0),
+  dueDay: integer('dueDay').notNull().default(1),
+  active: boolean('active').notNull().default(true),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
 export const householdMember = pgTable('household_member', {
   id: text('id').primaryKey(),
   householdId: text('householdId').notNull(),
@@ -102,6 +114,21 @@ export const expense = pgTable('expense', {
   amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
   spentAt: timestamp('spentAt').notNull().defaultNow(),
   createdBy: text('createdBy').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const payableBill = pgTable('payable_bill', {
+  id: serial('id').primaryKey(),
+  userId: text('userId').notNull(),
+  person: text('person').notNull(),
+  title: text('title').notNull(),
+  totalAmount: integer('totalAmount').notNull(),
+  installmentAmount: integer('installmentAmount').notNull(),
+  totalInstallments: integer('totalInstallments').notNull().default(1),
+  paidInstallments: integer('paidInstallments').notNull().default(0),
+  dueDay: integer('dueDay').notNull().default(1),
+  status: text('status').notNull().default('pending'),
+  notes: text('notes'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
