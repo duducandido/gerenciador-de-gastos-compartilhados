@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric, unique } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, unique, serial, integer } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -83,6 +83,18 @@ export const household = pgTable('household', {
   name: text('name').notNull(),
   inviteCode: text('inviteCode').notNull().unique(),
   createdBy: text('createdBy').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const savingsGoal = pgTable('savings_goals', {
+  id: serial('id').primaryKey(),
+  userId: text('userId').notNull(),
+  name: text('name').notNull(),
+  targetAmount: integer('targetAmount').notNull().default(0),
+  installmentAmount: integer('installmentAmount').notNull().default(0),
+  savedAmount: integer('savedAmount').notNull().default(0),
+  dueDay: integer('dueDay').notNull().default(1),
+  active: boolean('active').notNull().default(true),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
