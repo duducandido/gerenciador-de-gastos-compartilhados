@@ -176,7 +176,14 @@ html.dark {
   color-scheme: dark;
 }
 
-html.dark body { background: #050706 !important; }
+html.dark body, html.dark .auth-screen { background: #050706 !important; }
+@media (prefers-color-scheme: dark) {
+  .auth-screen { background: #050706 !important; color: #edf5ef !important; }
+  .auth-card { background: #111713 !important; border-color: #26332d !important; }
+  .auth-screen input { background: #0b0f0d !important; color: #edf5ef !important; border-color: #30423a !important; }
+  .auth-screen h1, .auth-screen p, .auth-screen label { color: #edf5ef !important; }
+  .auth-screen input::placeholder { color: #74827a !important; }
+}
 html.dark header { background-color: rgb(5 7 6 / 95%) !important; border-color: #26332d !important; }
 html.dark aside { background-color: #050706 !important; border-color: #26332d !important; }
 html.dark [class~="bg-white"], html.dark [class*="bg-white/"] { background-color: #111713 !important; }
