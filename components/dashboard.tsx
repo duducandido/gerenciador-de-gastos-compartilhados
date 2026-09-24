@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
+import { updateHouseholdSettings } from '@/app/actions/household'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -64,9 +65,16 @@ export default function Page() {
   const router = useRouter()
   const total = useMemo(() => expenses.reduce((sum, item) => sum + item.amount, 0), [])
 
-  function saveSettings() {
-    setSettingsSaved(true)
-    window.setTimeout(() => setSettingsSaved(false), 2200)
+  async function saveSettings() {
+    try {
+      const saved = await updateHouseholdSettings({ profileName, householdName: groupNames })
+      setProfileName(saved.profileName)
+      setGroupNames(saved.householdName)
+      setSettingsSaved(true)
+      window.setTimeout(() => setSettingsSaved(false), 2200)
+    } catch {
+      setSettingsSaved(false)
+    }
   }
 
   async function handleSignOut() {
@@ -100,7 +108,7 @@ export default function Page() {
           <div className="hidden items-center gap-3 md:flex">
             <button className="rounded-full p-2.5 text-[#7d8582] transition hover:bg-white hover:text-[#203f36]" aria-label="Notificações"><Bell size={18} /></button>
             <div className="h-8 w-px bg-[#dfe3e1]" />
-            <button className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-sm"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2c9a8] text-xs font-bold text-[#713d22]">MR</span><span className="text-sm font-semibold">Marina & Rafael</span><ChevronDown size={15} className="text-[#99a09e]" /></button>
+            <button className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-sm"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2c9a8] text-xs font-bold text-[#713d22]">MR</span><span className="text-sm font-semibold">{groupNames}</span><ChevronDown size={15} className="text-[#99a09e]" /></button>
           </div>
         </div>
       </header>
