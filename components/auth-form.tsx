@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
+import { joinHousehold } from '@/app/actions/household'
 
 export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const router = useRouter()
@@ -11,6 +12,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const [profileType, setProfileType] = useState<'solteiro' | 'casal' | 'familia'>('casal')
   const [partnerName, setPartnerName] = useState('')
   const [familyNames, setFamilyNames] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -33,6 +35,15 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     if (result.error) {
       setError('Não foi possível concluir. Confira seus dados e tente novamente.')
       return
+    }
+    if (isSignUp && inviteCode.trim()) {
+      try {
+        await joinHousehold(inviteCode)
+      } catch {
+        setLoading(false)
+        setError('Conta criada, mas o código de convite é inválido. Entre novamente e use um código válido.')
+        return
+      }
     }
     router.push('/')
     router.refresh()
@@ -71,6 +82,10 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               <textarea value={familyNames} onChange={(event) => setFamilyNames(event.target.value)} required placeholder="Ex.: Ana, Pedro, Luiza" rows={2} className="mt-2 w-full resize-none rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 py-3 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" />
               <span className="mt-1 block text-xs font-normal text-[#89918e]">Separe os nomes por vírgulas.</span>
             </label>}
+            <label className="block text-sm font-semibold text-[#435149]">Código de convite <span className="font-normal text-[#89918e]">(opcional)</span>
+              <input value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} placeholder="Ex.: A1B2C3D4" autoComplete="off" maxLength={8} className="mt-2 h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 font-normal uppercase tracking-[.18em] outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" />
+              <span className="mt-1 block text-xs font-normal text-[#89918e]">Já faz parte de uma conta? Cole aqui o código recebido pelo responsável.</span>
+            </label>
           </div>}
           <label className="block text-sm font-semibold text-[#435149]">Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" className="mt-2 h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" /></label>
           <label className="block text-sm font-semibold text-[#435149]">Senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete={isSignUp ? 'new-password' : 'current-password'} className="mt-2 h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" /></label>
