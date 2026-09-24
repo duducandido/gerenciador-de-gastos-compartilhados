@@ -10,7 +10,13 @@ export default async function HomePage() {
   if (!session?.user) redirect('/sign-in')
   const membership = await getMyHousehold()
   if (!membership) return <HouseholdSetup name={session.user.name} />
-  return <Dashboard />
+  return (
+    <Dashboard
+      initialProfileName={session.user.name}
+      initialHouseholdName={membership.household.name}
+      initialAvatarImage={session.user.image ?? null}
+    />
+  )
 }
 
 export const metadata = {

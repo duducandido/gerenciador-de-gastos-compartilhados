@@ -38,7 +38,13 @@ const expenses = [
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-export default function Page() {
+type DashboardProps = {
+  initialProfileName: string
+  initialHouseholdName: string
+  initialAvatarImage: string | null
+}
+
+export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage }: DashboardProps) {
   const [showInvite, setShowInvite] = useState(false)
   const [showExpense, setShowExpense] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
@@ -47,14 +53,14 @@ export default function Page() {
   const [expenseTitle, setExpenseTitle] = useState('')
   const [expenseAmount, setExpenseAmount] = useState('')
   const [expenseCategory, setExpenseCategory] = useState('Casa')
-  const [profileName, setProfileName] = useState('Marina')
+  const [profileName, setProfileName] = useState(initialProfileName)
   const [accountType, setAccountType] = useState<'single' | 'couple' | 'family'>('couple')
-  const [groupNames, setGroupNames] = useState('Marina & Rafael')
+  const [groupNames, setGroupNames] = useState(initialHouseholdName)
   const [monthlyLimit, setMonthlyLimit] = useState('3800')
   const [settingsSaved, setSettingsSaved] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
-  const [avatarImage, setAvatarImage] = useState<string | null>(null)
+  const [avatarImage, setAvatarImage] = useState<string | null>(initialAvatarImage)
   const [expenseItems, setExpenseItems] = useState(expenses)
   const [expenseError, setExpenseError] = useState('')
   const [avatarColor, setAvatarColor] = useState('#f2c9a8')
@@ -196,7 +202,7 @@ export default function Page() {
         </aside>
 
         {activeTab === 'overview' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12">
-          <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Terça-feira, 03 de junho de 2025</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Bom dia, Marina.</h1></div><button onClick={() => setShowExpense(true)} className="flex w-fit items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36] shadow-[0_5px_15px_rgba(141,183,61,.18)] transition hover:-translate-y-0.5"><Plus size={17} /> Adicionar gasto</button></div>
+          <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Terça-feira, 03 de junho de 2025</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Bom dia, {profileName.split(' ')[0]}.</h1></div><button onClick={() => setShowExpense(true)} className="flex w-fit items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36] shadow-[0_5px_15px_rgba(141,183,61,.18)] transition hover:-translate-y-0.5"><Plus size={17} /> Adicionar gasto</button></div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl bg-[#203f36] p-6 text-white shadow-[0_12px_30px_rgba(32,63,54,.13)] md:col-span-2"><div className="flex items-start justify-between"><div><p className="text-sm text-[#a8c0b2]">Total gasto em junho</p><p className="mt-2 text-4xl font-bold tracking-[-0.05em]">{formatCurrency(total)}</p></div><div className="rounded-xl bg-white/10 p-3 text-[#c8f169]"><Wallet size={22} /></div></div><div className="mt-7 flex items-end justify-between"><div><div className="mb-2 flex items-center gap-2 text-xs text-[#a8c0b2]"><span className="flex items-center gap-1 text-[#c8f169]"><ArrowDownLeft size={13} /> 8,4%</span> vs. mês passado</div><div className="h-2 w-48 overflow-hidden rounded-full bg-white/15"><div className="h-full w-[61%] rounded-full bg-[#c8f169]" /></div></div><p className="text-right text-xs text-[#a8c0b2]">limite mensal<br /><strong className="text-sm text-white">R$ 3.800,00</strong></p></div></div>
