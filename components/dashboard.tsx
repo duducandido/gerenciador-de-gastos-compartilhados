@@ -1,13 +1,16 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import type { ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
-import { updateHouseholdSettings } from '@/app/actions/household'
+import { updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Bell,
+  Camera,
+  Check,
   ChevronDown,
   CircleHelp,
   Copy,
@@ -49,6 +52,12 @@ export default function Page() {
   const [monthlyLimit, setMonthlyLimit] = useState('3800')
   const [settingsSaved, setSettingsSaved] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [showAvatarEditor, setShowAvatarEditor] = useState(false)
+  const [avatarImage, setAvatarImage] = useState<string | null>(null)
+  const [avatarColor, setAvatarColor] = useState('#f2c9a8')
+  const [avatarSaving, setAvatarSaving] = useState(false)
+
+  const avatarInitials = profileName.split(' ').filter(Boolean).slice(0, 2).map((name) => name[0]).join('').toUpperCase() || 'EU'
 
   function goToTab(tab: string, target?: string) {
     setActiveTab(tab)
@@ -74,6 +83,25 @@ export default function Page() {
       window.setTimeout(() => setSettingsSaved(false), 2200)
     } catch {
       setSettingsSaved(false)
+    }
+  }
+
+  async function handleAvatarFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = () => setAvatarImage(typeof reader.result === 'string' ? reader.result : null)
+    reader.readAsDataURL(file)
+  }
+
+  async function saveAvatar() {
+    setAvatarSaving(true)
+    try {
+      await updateProfileAvatar(avatarImage)
+      setShowAvatarEditor(false)
+    } finally {
+      setAvatarSaving(false)
     }
   }
 
@@ -108,7 +136,7 @@ export default function Page() {
           <div className="hidden items-center gap-3 md:flex">
             <button className="rounded-full p-2.5 text-[#7d8582] transition hover:bg-white hover:text-[#203f36]" aria-label="Notificações"><Bell size={18} /></button>
             <div className="h-8 w-px bg-[#dfe3e1]" />
-            <button className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-sm"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2c9a8] text-xs font-bold text-[#713d22]">MR</span><span className="text-sm font-semibold">{groupNames}</span><ChevronDown size={15} className="text-[#99a09e]" /></button>
+            <button onClick={() => setShowAvatarEditor(true)} className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-sm" aria-label="Editar foto do perfil"><span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-[#713d22]" style={{ backgroundColor: avatarColor }}>{avatarImage ? <img src={avatarImage} alt="Foto do perfil" className="h-full w-full object-cover" /> : avatarInitials}</span><span className="text-sm font-semibold">{groupNames}</span><ChevronDown size={15} className="text-[#99a09e]" /></button>
           </div>
         </div>
       </header>
@@ -154,6 +182,8 @@ export default function Page() {
 
         {activeTab === 'settings' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12"><div className="mb-9"><p className="mb-2 text-sm font-medium text-[#8a938f]">Preferências da sua conta</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Configurações</h1><p className="mt-2 text-sm text-[#7c8881]">Atualize seus dados e a forma como vocês organizam as finanças.</p></div><div className="grid max-w-4xl gap-6 lg:grid-cols-[1.1fr_.9fr]"><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><h2 className="text-lg font-bold text-[#203f36]">Perfil</h2><p className="mt-1 text-sm text-[#8a938f]">Essas informações aparecem para quem compartilha a conta.</p><div className="mt-6 space-y-5"><label className="block text-sm font-semibold text-[#35433d]">Seu nome<input value={profileName} onChange={(event) => setProfileName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" /></label><fieldset><legend className="text-sm font-semibold text-[#35433d]">Como vocês organizam a conta?</legend><div className="mt-3 grid gap-2 sm:grid-cols-3">{([{ value: 'single', label: 'Solteiro', description: 'Só eu' }, { value: 'couple', label: 'Casal', description: 'Duas pessoas' }, { value: 'family', label: 'Família', description: 'Várias pessoas' }] as const).map((option) => <button key={option.value} type="button" onClick={() => setAccountType(option.value)} className={`rounded-xl border px-3 py-3 text-left transition ${accountType === option.value ? 'border-[#8fb64f] bg-[#f1f8e6] text-[#315238]' : 'border-[#dce4df] text-[#6f7d74] hover:bg-[#f8faf7]'}`}><span className="block text-sm font-bold">{option.label}</span><span className="mt-1 block text-xs">{option.description}</span></button>)}</div></fieldset><label className="block text-sm font-semibold text-[#35433d]">{accountType === 'single' ? 'Seu nome completo' : accountType === 'couple' ? 'Nome do casal' : 'Nomes das pessoas da família'}<input value={groupNames} onChange={(event) => setGroupNames(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder={accountType === 'family' ? 'Ex.: Marina, Rafael e Sofia' : accountType === 'couple' ? 'Ex.: Marina & Rafael' : 'Ex.: Marina'} /></label><label className="block text-sm font-semibold text-[#35433d]">Limite mensal<input value={monthlyLimit} onChange={(event) => setMonthlyLimit(event.target.value)} type="number" min="0" step="0.01" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" /></label><button onClick={saveSettings} className="rounded-xl bg-[#203f36] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#2d5549]">{settingsSaved ? 'Alterações salvas' : 'Salvar alterações'}</button></div></div><div className="space-y-6"><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><h2 className="text-lg font-bold text-[#203f36]">Conta compartilhada</h2><p className="mt-1 text-sm text-[#8a938f]">Marina & Rafael</p><button onClick={() => setShowInvite(true)} className="mt-5 flex items-center gap-2 rounded-xl border border-[#cbdac4] px-4 py-3 text-sm font-bold text-[#496344] hover:bg-[#f5faed]"><Share2 size={16} /> Gerenciar convite</button></div><div className="rounded-2xl border border-[#f0d6d1] bg-[#fff8f6] p-6"><h2 className="text-lg font-bold text-[#8f3f35]">Zona de segurança</h2><p className="mt-1 text-sm leading-relaxed text-[#a56d65]">Para encerrar a sessão atual, use o botão abaixo.</p><button onClick={handleSignOut} className="mt-5 flex items-center gap-2 rounded-xl border border-[#e7b7b0] px-4 py-3 text-sm font-bold text-[#a33c30] hover:bg-white"><LogOut size={16} /> Sair da conta</button></div></div></div></section>}
       </div>
+
+      {showAvatarEditor && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowAvatarEditor(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="flex flex-col items-center text-center"><div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-[#713d22]" style={{ backgroundColor: avatarColor }}>{avatarImage ? <img src={avatarImage} alt="Prévia da foto do perfil" className="h-full w-full object-cover" /> : avatarInitials}</div><h2 className="mt-5 text-xl font-bold text-[#203f36]">Personalizar perfil</h2><p className="mt-2 text-sm text-[#7c8881]">Escolha uma foto ou uma cor para o seu avatar.</p><label className="mt-5 flex cursor-pointer items-center gap-2 rounded-xl bg-[#203f36] px-4 py-3 text-sm font-bold text-white hover:bg-[#2d5549]"><Camera size={17} /> Escolher foto<input type="file" accept="image/*" onChange={handleAvatarFile} className="sr-only" /></label><div className="mt-5 flex gap-3" aria-label="Cores do avatar">{['#f2c9a8', '#c8f169', '#b9d9d0', '#d8b4e2', '#f5c2c7'].map((color) => <button key={color} type="button" onClick={() => { setAvatarColor(color); setAvatarImage(null) }} className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-sm ring-1 ring-[#dce4df]" style={{ backgroundColor: color }} aria-label={`Usar cor ${color}`}>{avatarColor === color && !avatarImage && <Check size={16} className="text-[#203f36]" />}</button>)}</div><button onClick={saveAvatar} disabled={avatarSaving} className="mt-6 w-full rounded-xl border border-[#dce4df] py-3 text-sm font-bold text-[#203f36] hover:bg-[#f8faf7] disabled:opacity-60">{avatarSaving ? 'Salvando...' : 'Salvar avatar'}</button></div></div></div>}
 
       {showExpense && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowExpense(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f3d6] text-[#668c35]"><Plus size={22} /></div><h2 className="text-2xl font-bold tracking-tight text-[#203f36]">Adicionar gasto</h2><p className="mt-2 text-sm text-[#7c8881]">Registre uma despesa para a conta compartilhada.</p><div className="mt-6 space-y-4"><label className="block text-sm font-semibold text-[#35433d]">Descrição<input value={expenseTitle} onChange={(event) => setExpenseTitle(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="Ex.: Mercado do mês" /></label><label className="block text-sm font-semibold text-[#35433d]">Valor<input value={expenseAmount} onChange={(event) => setExpenseAmount(event.target.value)} type="number" min="0.01" step="0.01" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="0,00" /></label><label className="block text-sm font-semibold text-[#35433d]">Categoria<select value={expenseCategory} onChange={(event) => setExpenseCategory(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] bg-white px-4 py-3 outline-none focus:border-[#9bc65b]"><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option></select></label></div><button onClick={addExpense} className="mt-6 w-full rounded-xl bg-[#203f36] py-3.5 text-sm font-bold text-white transition hover:bg-[#2d5549]">Salvar gasto</button></div></div>}
 
