@@ -157,7 +157,18 @@ html {
   --app-bg: #f7f8fa;
   --app-text: #20252b;
   --accent-user: #c8f169;
+  --accent-surface: color-mix(in srgb, var(--accent-user) 28%, #203f36);
+  --accent-soft: color-mix(in srgb, var(--accent-user) 18%, white);
+  --accent-ink: color-mix(in srgb, var(--accent-user) 42%, #203f36);
 }
+
+/* Todas as superfícies de marca acompanham a cor escolhida nas configurações. */
+.bg-\[\#203f36\] { background-color: var(--accent-surface) !important; }
+.text-\[\#c8f169\] { color: var(--accent-user) !important; }
+.bg-\[\#c8f169\] { background-color: var(--accent-user) !important; }
+.bg-\[\#e7f3d6\] { background-color: var(--accent-soft) !important; }
+.text-\[\#32513d\], .text-\[\#557932\] { color: var(--accent-ink) !important; }
+
 
 html.dark {
   --app-bg: #111916;
