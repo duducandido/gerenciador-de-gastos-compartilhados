@@ -16,8 +16,9 @@ export default async function HomePage() {
     <Dashboard
       initialProfileName={session.user.name}
       initialHouseholdName={membership.household.name}
-      initialAvatarImage={session.user.image ?? null}
-      initialSavings={savings}
+  initialAvatarImage={session.user.image ?? null}
+  initialAccountCreatedAt={new Date(session.user.createdAt).toISOString()}
+  initialSavings={savings}
       initialPayableBills={payableBills}
     />
   )

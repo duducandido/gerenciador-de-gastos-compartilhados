@@ -40,11 +40,17 @@ type DashboardProps = {
   initialProfileName: string
   initialHouseholdName: string
   initialAvatarImage: string | null
+  initialAccountCreatedAt: string
   initialSavings: Array<{ id: number; name: string; targetAmount: number; installmentAmount: number; savedAmount: number; dueDay: number }>
   initialPayableBills: Array<{ id: number; person: string; title: string; totalAmount: number; installmentAmount: number; totalInstallments: number; paidInstallments: number; dueDay: number; status: string }>
 }
 
-export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialSavings, initialPayableBills }: DashboardProps) {
+export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccountCreatedAt, initialSavings, initialPayableBills }: DashboardProps) {
+  const accountCreatedAt = new Date(initialAccountCreatedAt)
+  const currentDate = new Date()
+  const monthsSinceAccountCreation = (currentDate.getFullYear() - accountCreatedAt.getFullYear()) * 12 + currentDate.getMonth() - accountCreatedAt.getMonth()
+  const hasPreviousMonth = monthsSinceAccountCreation >= 1
+
   const [showInvite, setShowInvite] = useState(false)
   const [showExpense, setShowExpense] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
@@ -290,7 +296,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
             <button onClick={() => goToTab('settings')} className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left ${activeTab === 'settings' ? 'bg-[#203f36] text-white shadow-sm' : 'text-[#727b77] hover:bg-white'}`}><Settings size={18} /> Configurações</button>
             <button onClick={handleSignOut} disabled={signingOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] transition hover:bg-[#fff1ef] hover:text-[#a33c30] disabled:cursor-wait disabled:opacity-60"><LogOut size={18} /> {signingOut ? 'Saindo...' : 'Sair da conta'}</button>
           </nav>
-          <div className="mt-auto hidden rounded-2xl bg-[#e7f3d6] p-4 lg:block"><p className="mb-2 text-xs font-bold text-[#32513d]">Dica do mês</p><p className="text-xs leading-relaxed text-[#5d7561]">Vocês já economizaram 12% comparado ao mês passado.</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#c8dfaf]"><div className="h-full w-[72%] rounded-full bg-[#94bd53]" /></div></div>
+          {hasPreviousMonth && <div className="mt-auto hidden rounded-2xl bg-[#e7f3d6] p-4 lg:block"><p className="mb-2 text-xs font-bold text-[#32513d]">Dica do mês</p><p className="text-xs leading-relaxed text-[#5d7561]">Vocês já economizaram comparado ao mês passado.</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#c8dfaf]"><div className="h-full w-0 rounded-full bg-[#94bd53]" /></div></div>}
         </aside>
 
         {activeTab === 'overview' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12">
