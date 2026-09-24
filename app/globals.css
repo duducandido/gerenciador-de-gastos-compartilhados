@@ -153,6 +153,23 @@
   }
 }
 
+html {
+  --app-bg: #f7f8fa;
+  --app-text: #20252b;
+  --accent-user: #c8f169;
+}
+
+html.dark {
+  --app-bg: #111916;
+  --app-text: #edf5ef;
+}
+
+html.dark .bg-white { background-color: #1b2924 !important; }
+html.dark .bg-\[\#f7f8fa\] { background-color: #111916 !important; }
+html.dark .text-\[\#203f36\] { color: #e9f5ed !important; }
+html.dark .text-\[\#20252b\] { color: #edf5ef !important; }
+html.dark .border-\[\#e5e9e7\], html.dark .border-\[\#e6e9ed\] { border-color: #30423a !important; }
+
 @layer base {
   html {
     font-family: Arial, Helvetica, sans-serif;

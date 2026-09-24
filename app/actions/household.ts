@@ -53,6 +53,14 @@ export async function updateHouseholdSettings(input: { profileName: string; hous
   return { profileName, householdName }
 }
 
+export async function updateAppearance(input: { accentColor: string; theme: 'light' | 'dark' }) {
+  const userId = await getUserId()
+  if (!/^#[0-9a-fA-F]{6}$/.test(input.accentColor)) throw new Error('Escolha uma cor válida')
+  await db.update(user).set({ accentColor: input.accentColor, theme: input.theme, updatedAt: new Date() }).where(eq(user.id, userId))
+  revalidatePath('/')
+  return input
+}
+
 export async function updateProfileAvatar(image: string | null) {
   const userId = await getUserId()
   if (image && image.length > 700_000) throw new Error('A foto precisa ter menos de 500 KB')

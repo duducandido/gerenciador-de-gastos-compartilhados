@@ -17,6 +17,8 @@ export default async function HomePage() {
       initialProfileName={session.user.name}
       initialHouseholdName={membership.household.name}
   initialAvatarImage={session.user.image ?? null}
+  initialAccentColor={session.user.accentColor ?? '#c8f169'}
+  initialTheme={session.user.theme === 'dark' ? 'dark' : 'light'}
   initialAccountCreatedAt={new Date(session.user.createdAt).toISOString()}
   initialSavings={savings}
       initialPayableBills={payableBills}
