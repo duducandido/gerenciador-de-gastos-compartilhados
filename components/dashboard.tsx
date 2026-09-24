@@ -54,6 +54,8 @@ export default function Page() {
   const [signingOut, setSigningOut] = useState(false)
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
   const [avatarImage, setAvatarImage] = useState<string | null>(null)
+  const [expenseItems, setExpenseItems] = useState(expenses)
+  const [expenseError, setExpenseError] = useState('')
   const [avatarColor, setAvatarColor] = useState('#f2c9a8')
   const [avatarSaving, setAvatarSaving] = useState(false)
 
@@ -66,13 +68,19 @@ export default function Page() {
   }
 
   function addExpense() {
-    if (!expenseTitle.trim() || !expenseAmount || Number(expenseAmount) <= 0) return
+    const amount = Number(expenseAmount.replace(',', '.'))
+    if (!expenseTitle.trim() || !Number.isFinite(amount) || amount <= 0) {
+      setExpenseError('Informe uma descrição e um valor maior que zero.')
+      return
+    }
+    setExpenseItems((current) => [{ title: expenseTitle.trim(), category: expenseCategory, date: 'Agora', amount, icon: Wallet, color: 'bg-emerald-100 text-emerald-700' }, ...current])
     setExpenseTitle('')
     setExpenseAmount('')
+    setExpenseError('')
     setShowExpense(false)
   }
   const router = useRouter()
-  const total = useMemo(() => expenses.reduce((sum, item) => sum + item.amount, 0), [])
+  const total = useMemo(() => expenseItems.reduce((sum, item) => sum + item.amount, 0), [expenseItems])
 
   async function saveSettings() {
     try {
@@ -167,15 +175,15 @@ export default function Page() {
           </div>
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.3fr_.7fr]">
-            <section id="gastos" className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Últimos gastos</h2><p className="mt-1 text-xs text-[#8a938f]">Tudo o que foi registrado na conta</p></div><button className="text-xs font-bold text-[#789b40]">Ver todos</button></div><div className="space-y-2">{expenses.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 transition hover:bg-[#f8faf7]"><div className="flex min-w-0 items-center gap-3"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div className="min-w-0"><p className="truncate text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="mt-0.5 text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><p className="shrink-0 text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p></div> })}</div></section>
+            <section id="gastos" className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Últimos gastos</h2><p className="mt-1 text-xs text-[#8a938f]">Tudo o que foi registrado na conta</p></div><button className="text-xs font-bold text-[#789b40]">Ver todos</button></div><div className="space-y-2">{expenseItems.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 transition hover:bg-[#f8faf7]"><div className="flex min-w-0 items-center gap-3"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div className="min-w-0"><p className="truncate text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="mt-0.5 text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><p className="shrink-0 text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p></div> })}</div></section>
             <section id="metas" className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Metas do casal</h2><p className="mt-1 text-xs text-[#8a938f]">Construindo juntos</p></div><button className="rounded-lg p-2 text-[#8a938f] hover:bg-[#f4f7f2]" aria-label="Adicionar meta"><Plus size={17} /></button></div><div className="space-y-5"><Goal label="Viagem para Gramado" value="R$ 2.450" total="R$ 5.000" progress="49%" color="bg-[#e7a65b]"/><Goal label="Reserva de emergência" value="R$ 7.200" total="R$ 12.000" progress="60%" color="bg-[#7ea8a0]"/><Goal label="Noite sem gastar" value="3 dias" total="5 dias" progress="60%" color="bg-[#b68ac5]"/></div></section>
           </div>
         </section>}
 
         {activeTab === 'expenses' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12">
           <div className="mb-9 flex items-end justify-between gap-4"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Movimentações da conta</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Gastos</h1><p className="mt-2 text-sm text-[#7c8881]">Acompanhe e organize todas as despesas do mês.</p></div><button onClick={() => setShowExpense(true)} className="flex w-fit items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36]"><Plus size={17} /> Adicionar gasto</button></div>
-          <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl bg-[#203f36] p-6 text-white"><p className="text-sm text-[#a8c0b2]">Total em junho</p><p className="mt-2 text-3xl font-bold">{formatCurrency(total)}</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><p className="text-sm text-[#8a938f]">Quantidade</p><p className="mt-2 text-3xl font-bold text-[#203f36]">{expenses.length}</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><p className="text-sm text-[#8a938f]">Média por gasto</p><p className="mt-2 text-3xl font-bold text-[#203f36]">{formatCurrency(total / expenses.length)}</p></div></div>
-          <div className="mt-8 rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><h2 className="text-lg font-bold text-[#203f36]">Todos os gastos</h2><div className="mt-5 space-y-2">{expenses.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 hover:bg-[#f8faf7]"><div className="flex items-center gap-3"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div><p className="text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><p className="text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p></div> })}</div></div>
+          <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl bg-[#203f36] p-6 text-white"><p className="text-sm text-[#a8c0b2]">Total em junho</p><p className="mt-2 text-3xl font-bold">{formatCurrency(total)}</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><p className="text-sm text-[#8a938f]">Quantidade</p><p className="mt-2 text-3xl font-bold text-[#203f36]">{expenseItems.length}</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><p className="text-sm text-[#8a938f]">Média por gasto</p><p className="mt-2 text-3xl font-bold text-[#203f36]">{formatCurrency(total / expenseItems.length)}</p></div></div>
+          <div className="mt-8 rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><h2 className="text-lg font-bold text-[#203f36]">Todos os gastos</h2><div className="mt-5 space-y-2">{expenseItems.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 hover:bg-[#f8faf7]"><div className="flex items-center gap-3"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div><p className="text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><p className="text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p></div> })}</div></div>
         </section>}
 
         {activeTab === 'goals' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12"><div className="mb-9"><p className="mb-2 text-sm font-medium text-[#8a938f]">Planos para o futuro</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Metas</h1><p className="mt-2 text-sm text-[#7c8881]">Acompanhem cada conquista juntos.</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Metas do casal</h2><p className="mt-1 text-xs text-[#8a938f]">Construindo juntos</p></div><button className="flex items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36]" onClick={() => window.alert('A criação de metas estará disponível em breve.') }><Plus size={17} /> Nova meta</button></div><div className="grid gap-8 md:grid-cols-2"><Goal label="Viagem para Gramado" value="R$ 2.450" total="R$ 5.000" progress="49%" color="bg-[#e7a65b]"/><Goal label="Reserva de emergência" value="R$ 7.200" total="R$ 12.000" progress="60%" color="bg-[#7ea8a0]"/><Goal label="Noite sem gastar" value="3 dias" total="5 dias" progress="60%" color="bg-[#b68ac5]"/></div></div></section>}
