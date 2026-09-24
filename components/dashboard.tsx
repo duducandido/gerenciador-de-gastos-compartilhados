@@ -32,12 +32,7 @@ import {
   X,
 } from 'lucide-react'
 
-const expenses = [
-  { title: 'Mercado do mês', category: 'Casa', date: 'Hoje, 10:42', amount: 284.9, icon: ShoppingBag, color: 'bg-amber-100 text-amber-700' },
-  { title: 'Aluguel', category: 'Casa', date: '02 jun, 08:00', amount: 1850, icon: Home, color: 'bg-blue-100 text-blue-700' },
-  { title: 'Jantar de sexta', category: 'Lazer', date: '01 jun, 21:18', amount: 126.4, icon: Utensils, color: 'bg-rose-100 text-rose-700' },
-  { title: 'Uber', category: 'Transporte', date: '31 mai, 18:36', amount: 32.8, icon: ArrowUpRight, color: 'bg-violet-100 text-violet-700' },
-]
+const expenses: Array<{ title: string; category: string; date: string; amount: number; icon: typeof Wallet; color: string }> = []
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -82,7 +77,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [browserNotifications, setBrowserNotifications] = useState(false)
   const [history, setHistory] = useState<Array<{ id: number; label: string; detail: string; time: string }>>([])
-  const [members, setMembers] = useState([{ id: 1, name: profileName, role: 'Administrador' }, { id: 2, name: 'Rafael', role: 'Membro' }])
+  const [members, setMembers] = useState([{ id: 1, name: profileName, role: 'Administrador' }])
   const [savings, setSavings] = useState(initialSavings)
   const [showSavings, setShowSavings] = useState(false)
   const [savingsName, setSavingsName] = useState('')
@@ -137,7 +132,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const visibleExpenses = useMemo(() => expenseFilter === 'Todas' ? expenseItems : expenseItems.filter((item) => item.category === expenseFilter), [expenseFilter, expenseItems])
   const reservedTotal = savings.reduce((sum, item) => sum + item.installmentAmount / 100, 0)
   const billsTotal = bills.filter((bill) => bill.status === 'pending').reduce((sum, bill) => sum + bill.installmentAmount / 100, 0)
-  const availableBalance = Math.max(0, 3800 - total - reservedTotal - billsTotal)
+  const availableBalance = Math.max(0, Number(monthlyLimit.replace(',', '.')) - total - reservedTotal - billsTotal)
 
   async function addContribution() {
     if (!contributionGoalId) return
