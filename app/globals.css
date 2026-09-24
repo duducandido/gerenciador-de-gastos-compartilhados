@@ -179,14 +179,15 @@ html.dark {
 html.dark body { background: #050706 !important; }
 html.dark header { background-color: rgb(5 7 6 / 95%) !important; border-color: #26332d !important; }
 html.dark aside { background-color: #050706 !important; border-color: #26332d !important; }
-html.dark .bg-white { background-color: #111713 !important; }
-html.dark .bg-\[\#f7f8fa\], html.dark .bg-\[\#f1f8e5\], html.dark .bg-\[\#f1f8e6\] { background-color: #0b0f0d !important; }
+html.dark [class~="bg-white"], html.dark [class*="bg-white/"] { background-color: #111713 !important; }
+html.dark .bg-\[\#f7f8fa\], html.dark .bg-\[\#f1f8e5\], html.dark .bg-\[\#f1f8e6\], html.dark .bg-\[\#f8faf7\], html.dark .bg-\[\#f4f7f2\], html.dark .bg-\[\#edf0ee\] { background-color: #0b0f0d !important; }
 html.dark .bg-\[\#fff8f6\] { background-color: #1b100e !important; }
-html.dark .bg-\[\#e7f3d6\], html.dark .bg-\[\#eaf5dd\] { background-color: color-mix(in srgb, var(--accent-user) 12%, #111713) !important; }
+html.dark .bg-\[\#fff1ef\] { background-color: #241310 !important; }
+html.dark .bg-\[\#e7f3d6\], html.dark .bg-\[\#eaf5dd\], html.dark .bg-\[\#c8dfaf\] { background-color: color-mix(in srgb, var(--accent-user) 12%, #111713) !important; }
 html.dark .text-\[\#203f36\], html.dark .text-\[\#35433d\] { color: #edf5ef !important; }
 html.dark .text-\[\#20252b\] { color: #edf5ef !important; }
-html.dark .text-\[\#727b77\], html.dark .text-\[\#8a938f\], html.dark .text-\[\#89918e\] { color: #9eaca4 !important; }
-html.dark .border-\[\#e5e9e7\], html.dark .border-\[\#e6e9ed\], html.dark .border-\[\#dce8c8\], html.dark .border-\[\#f0d6d1\] { border-color: #26332d !important; }
+html.dark .text-\[\#727b77\], html.dark .text-\[\#8a938f\], html.dark .text-\[\#89918e\], html.dark .text-\[\#9aa29e\], html.dark .text-\[\#a1a9a5\], html.dark .text-\[\#a8c0b2\] { color: #9eaca4 !important; }
+html.dark .border-\[\#e5e9e7\], html.dark .border-\[\#e6e9ed\], html.dark .border-\[\#dce8c8\], html.dark .border-\[\#f0d6d1\], html.dark .border-\[\#dce4df\] { border-color: #26332d !important; }
 html.dark [class~="hover:bg-white"]:hover { background-color: #1b2720 !important; }
 html.dark input, html.dark select, html.dark textarea { background-color: #111713 !important; color: #edf5ef !important; border-color: #30423a !important; }
 html.dark input::placeholder, html.dark textarea::placeholder { color: #74827a !important; }
