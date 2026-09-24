@@ -42,6 +42,10 @@ export default function Page() {
   const [expenseTitle, setExpenseTitle] = useState('')
   const [expenseAmount, setExpenseAmount] = useState('')
   const [expenseCategory, setExpenseCategory] = useState('Casa')
+  const [profileName, setProfileName] = useState('Marina')
+  const [monthlyLimit, setMonthlyLimit] = useState('3800')
+  const [settingsSaved, setSettingsSaved] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
 
   function goToTab(tab: string, target?: string) {
     setActiveTab(tab)
@@ -58,10 +62,21 @@ export default function Page() {
   const router = useRouter()
   const total = useMemo(() => expenses.reduce((sum, item) => sum + item.amount, 0), [])
 
+  function saveSettings() {
+    setSettingsSaved(true)
+    window.setTimeout(() => setSettingsSaved(false), 2200)
+  }
+
   async function handleSignOut() {
-    await authClient.signOut()
-    router.push('/sign-in')
-    router.refresh()
+    if (signingOut) return
+    setSigningOut(true)
+    try {
+      await authClient.signOut()
+      router.push('/sign-in')
+      router.refresh()
+    } catch {
+      setSigningOut(false)
+    }
   }
   const inviteLink = 'casal.app/entrar/8K4M2P'
 
@@ -99,8 +114,8 @@ export default function Page() {
           <p className="mb-3 px-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#a1a9a5]">Sua conta</p>
           <nav className="space-y-1 text-sm font-medium">
             <button onClick={() => setShowInvite(true)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] hover:bg-white"><Share2 size={18} /> Compartilhar conta</button>
-            <button onClick={() => window.alert('As configurações da conta estarão disponíveis em breve.')} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] hover:bg-white"><Settings size={18} /> Configurações</button>
-            <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] transition hover:bg-[#fff1ef] hover:text-[#a33c30]"><LogOut size={18} /> Sair da conta</button>
+            <button onClick={() => goToTab('settings')} className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left ${activeTab === 'settings' ? 'bg-[#203f36] text-white shadow-sm' : 'text-[#727b77] hover:bg-white'}`}><Settings size={18} /> Configurações</button>
+            <button onClick={handleSignOut} disabled={signingOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] transition hover:bg-[#fff1ef] hover:text-[#a33c30] disabled:cursor-wait disabled:opacity-60"><LogOut size={18} /> {signingOut ? 'Saindo...' : 'Sair da conta'}</button>
           </nav>
           <div className="mt-auto hidden rounded-2xl bg-[#e7f3d6] p-4 lg:block"><p className="mb-2 text-xs font-bold text-[#32513d]">Dica do mês</p><p className="text-xs leading-relaxed text-[#5d7561]">Vocês já economizaram 12% comparado ao mês passado.</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#c8dfaf]"><div className="h-full w-[72%] rounded-full bg-[#94bd53]" /></div></div>
         </aside>
@@ -126,6 +141,8 @@ export default function Page() {
         </section>}
 
         {activeTab === 'goals' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12"><div className="mb-9"><p className="mb-2 text-sm font-medium text-[#8a938f]">Planos para o futuro</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Metas</h1><p className="mt-2 text-sm text-[#7c8881]">Acompanhem cada conquista juntos.</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Metas do casal</h2><p className="mt-1 text-xs text-[#8a938f]">Construindo juntos</p></div><button className="flex items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36]" onClick={() => window.alert('A criação de metas estará disponível em breve.') }><Plus size={17} /> Nova meta</button></div><div className="grid gap-8 md:grid-cols-2"><Goal label="Viagem para Gramado" value="R$ 2.450" total="R$ 5.000" progress="49%" color="bg-[#e7a65b]"/><Goal label="Reserva de emergência" value="R$ 7.200" total="R$ 12.000" progress="60%" color="bg-[#7ea8a0]"/><Goal label="Noite sem gastar" value="3 dias" total="5 dias" progress="60%" color="bg-[#b68ac5]"/></div></div></section>}
+
+        {activeTab === 'settings' && <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12"><div className="mb-9"><p className="mb-2 text-sm font-medium text-[#8a938f]">Preferências da sua conta</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Configurações</h1><p className="mt-2 text-sm text-[#7c8881]">Atualize seus dados e a forma como vocês organizam as finanças.</p></div><div className="grid max-w-4xl gap-6 lg:grid-cols-[1.1fr_.9fr]"><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><h2 className="text-lg font-bold text-[#203f36]">Perfil</h2><p className="mt-1 text-sm text-[#8a938f]">Essas informações aparecem para quem compartilha a conta.</p><div className="mt-6 space-y-5"><label className="block text-sm font-semibold text-[#35433d]">Seu nome<input value={profileName} onChange={(event) => setProfileName(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" /></label><label className="block text-sm font-semibold text-[#35433d]">Limite mensal<input value={monthlyLimit} onChange={(event) => setMonthlyLimit(event.target.value)} type="number" min="0" step="0.01" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" /></label><button onClick={saveSettings} className="rounded-xl bg-[#203f36] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#2d5549]">{settingsSaved ? 'Alterações salvas' : 'Salvar alterações'}</button></div></div><div className="space-y-6"><div className="rounded-2xl border border-[#e5e9e7] bg-white p-6"><h2 className="text-lg font-bold text-[#203f36]">Conta compartilhada</h2><p className="mt-1 text-sm text-[#8a938f]">Marina & Rafael</p><button onClick={() => setShowInvite(true)} className="mt-5 flex items-center gap-2 rounded-xl border border-[#cbdac4] px-4 py-3 text-sm font-bold text-[#496344] hover:bg-[#f5faed]"><Share2 size={16} /> Gerenciar convite</button></div><div className="rounded-2xl border border-[#f0d6d1] bg-[#fff8f6] p-6"><h2 className="text-lg font-bold text-[#8f3f35]">Zona de segurança</h2><p className="mt-1 text-sm leading-relaxed text-[#a56d65]">Para encerrar a sessão atual, use o botão abaixo.</p><button onClick={handleSignOut} className="mt-5 flex items-center gap-2 rounded-xl border border-[#e7b7b0] px-4 py-3 text-sm font-bold text-[#a33c30] hover:bg-white"><LogOut size={16} /> Sair da conta</button></div></div></div></section>}
       </div>
 
       {showExpense && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowExpense(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f3d6] text-[#668c35]"><Plus size={22} /></div><h2 className="text-2xl font-bold tracking-tight text-[#203f36]">Adicionar gasto</h2><p className="mt-2 text-sm text-[#7c8881]">Registre uma despesa para a conta compartilhada.</p><div className="mt-6 space-y-4"><label className="block text-sm font-semibold text-[#35433d]">Descrição<input value={expenseTitle} onChange={(event) => setExpenseTitle(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="Ex.: Mercado do mês" /></label><label className="block text-sm font-semibold text-[#35433d]">Valor<input value={expenseAmount} onChange={(event) => setExpenseAmount(event.target.value)} type="number" min="0.01" step="0.01" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="0,00" /></label><label className="block text-sm font-semibold text-[#35433d]">Categoria<select value={expenseCategory} onChange={(event) => setExpenseCategory(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] bg-white px-4 py-3 outline-none focus:border-[#9bc65b]"><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option></select></label></div><button onClick={addExpense} className="mt-6 w-full rounded-xl bg-[#203f36] py-3.5 text-sm font-bold text-white transition hover:bg-[#2d5549]">Salvar gasto</button></div></div>}
