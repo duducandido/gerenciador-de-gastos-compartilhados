@@ -117,6 +117,21 @@ export const expense = pgTable('expense', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
+export const payableBill = pgTable('payable_bill', {
+  id: serial('id').primaryKey(),
+  userId: text('userId').notNull(),
+  person: text('person').notNull(),
+  title: text('title').notNull(),
+  totalAmount: integer('totalAmount').notNull(),
+  installmentAmount: integer('installmentAmount').notNull(),
+  totalInstallments: integer('totalInstallments').notNull().default(1),
+  paidInstallments: integer('paidInstallments').notNull().default(0),
+  dueDay: integer('dueDay').notNull().default(1),
+  status: text('status').notNull().default('pending'),
+  notes: text('notes'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
 export const goal = pgTable('goal', {
   id: text('id').primaryKey(),
   householdId: text('householdId').notNull(),
