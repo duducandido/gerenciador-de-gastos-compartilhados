@@ -170,6 +170,12 @@ html.dark .text-\[\#203f36\] { color: #e9f5ed !important; }
 html.dark .text-\[\#20252b\] { color: #edf5ef !important; }
 html.dark .border-\[\#e5e9e7\], html.dark .border-\[\#e6e9ed\] { border-color: #30423a !important; }
 
+@media print {
+  header, aside, button, [role="dialog"] { display: none !important; }
+  main { background: white !important; color: #203f36 !important; }
+  section { display: block !important; }
+}
+
 @layer base {
   html {
     font-family: Arial, Helvetica, sans-serif;
