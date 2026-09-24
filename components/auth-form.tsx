@@ -4,12 +4,14 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
+import { Eye, EyeOff } from 'lucide-react'
 
 export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const isSignUp = mode === 'sign-up'
@@ -41,7 +43,14 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
             <input value={name} onChange={(event) => setName(event.target.value)} required autoComplete="name" className="mt-2 h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" />
           </label>}
           <label className="block text-sm font-semibold text-[#435149]">Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" className="mt-2 h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" /></label>
-          <label className="block text-sm font-semibold text-[#435149]">Senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete={isSignUp ? 'new-password' : 'current-password'} className="mt-2 h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" /></label>
+          <label className="block text-sm font-semibold text-[#435149]">Senha
+            <span className="relative mt-2 block">
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete={isSignUp ? 'new-password' : 'current-password'} className="h-12 w-full rounded-xl border border-[#dfe6e1] bg-[#fbfcfb] px-4 pr-12 font-normal outline-none transition focus:border-[#8eaf55] focus:ring-4 focus:ring-[#e7f3d6]" />
+              <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} title={showPassword ? 'Ocultar senha' : 'Mostrar senha'} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#7c8881] transition hover:text-[#203f36]">
+                {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              </button>
+            </span>
+          </label>
           {error && <p className="rounded-xl bg-[#fff1ef] px-3 py-2 text-sm text-[#a33c30]" role="alert">{error}</p>}
           <button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-[#203f36] text-sm font-bold text-white transition hover:bg-[#2d5549] disabled:opacity-60">{loading ? 'Aguarde...' : isSignUp ? 'Criar minha conta' : 'Entrar'}</button>
         </form>
