@@ -191,6 +191,11 @@ html.dark .bg-\[\#f7f8fa\], html.dark .bg-\[\#f1f8e5\], html.dark .bg-\[\#f1f8e6
 html.dark .bg-\[\#fff8f6\] { background-color: #1b100e !important; }
 html.dark .bg-\[\#fff1ef\] { background-color: #241310 !important; }
 html.dark .bg-\[\#e7f3d6\], html.dark .bg-\[\#eaf5dd\], html.dark .bg-\[\#c8dfaf\] { background-color: color-mix(in srgb, var(--accent-user) 12%, #111713) !important; }
+html.dark .outline-\[\#203f36\] { outline-color: var(--accent-user) !important; }
+html.dark .ring-\[\#dfe6e1\] { --tw-ring-color: #30423a !important; }
+html.dark .border-white { border-color: #111713 !important; }
+html.dark .text-\[\#789b40\], html.dark .text-\[\#719b37\], html.dark .text-\[\#8eaf55\] { color: var(--accent-user) !important; }
+html.dark .border-\[\#8eaf55\] { border-color: var(--accent-user) !important; }
 html.dark .text-\[\#203f36\], html.dark .text-\[\#35433d\] { color: #edf5ef !important; }
 html.dark .text-\[\#20252b\] { color: #edf5ef !important; }
 html.dark .text-\[\#727b77\], html.dark .text-\[\#8a938f\], html.dark .text-\[\#89918e\], html.dark .text-\[\#9aa29e\], html.dark .text-\[\#a1a9a5\], html.dark .text-\[\#a8c0b2\] { color: #9eaca4 !important; }
