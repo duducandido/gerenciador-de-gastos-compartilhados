@@ -35,8 +35,26 @@ const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style:
 
 export default function Page() {
   const [showInvite, setShowInvite] = useState(false)
+  const [showExpense, setShowExpense] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
+  const [expenseTitle, setExpenseTitle] = useState('')
+  const [expenseAmount, setExpenseAmount] = useState('')
+  const [expenseCategory, setExpenseCategory] = useState('Casa')
+
+  function goToTab(tab: string, target?: string) {
+    setActiveTab(tab)
+    setMobileMenu(false)
+    if (target) document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function addExpense() {
+    if (!expenseTitle.trim() || !expenseAmount || Number(expenseAmount) <= 0) return
+    setExpenseTitle('')
+    setExpenseAmount('')
+    setShowExpense(false)
+  }
   const router = useRouter()
   const total = useMemo(() => expenses.reduce((sum, item) => sum + item.amount, 0), [])
 
@@ -73,22 +91,22 @@ export default function Page() {
       <div className="mx-auto flex max-w-[1320px]">
         <aside className={`${mobileMenu ? 'flex' : 'hidden'} fixed inset-0 z-10 w-72 flex-col border-r border-[#e6e9ed] bg-[#f7f8fa] p-5 pt-24 lg:static lg:flex lg:min-h-[calc(100vh-80px)] lg:w-60 lg:bg-transparent lg:p-8 lg:pt-10`}>
           <nav className="space-y-1 text-sm font-medium">
-            <a className="flex items-center gap-3 rounded-xl bg-[#203f36] px-4 py-3 text-white shadow-sm" href="#"><LayoutDashboard size={18} /> Visão geral</a>
-            <a className="flex items-center gap-3 rounded-xl px-4 py-3 text-[#727b77] hover:bg-white" href="#gastos"><ArrowDownLeft size={18} /> Gastos</a>
-            <a className="flex items-center gap-3 rounded-xl px-4 py-3 text-[#727b77] hover:bg-white" href="#metas"><Sparkles size={18} /> Metas</a>
+            <button onClick={() => goToTab('overview')} className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left ${activeTab === 'overview' ? 'bg-[#203f36] text-white shadow-sm' : 'text-[#727b77] hover:bg-white'}`}><LayoutDashboard size={18} /> Visão geral</button>
+            <button onClick={() => goToTab('expenses', 'gastos')} className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left ${activeTab === 'expenses' ? 'bg-[#203f36] text-white shadow-sm' : 'text-[#727b77] hover:bg-white'}`}><ArrowDownLeft size={18} /> Gastos</button>
+            <button onClick={() => goToTab('goals', 'metas')} className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left ${activeTab === 'goals' ? 'bg-[#203f36] text-white shadow-sm' : 'text-[#727b77] hover:bg-white'}`}><Sparkles size={18} /> Metas</button>
           </nav>
           <div className="my-8 h-px bg-[#e4e8e6]" />
           <p className="mb-3 px-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#a1a9a5]">Sua conta</p>
           <nav className="space-y-1 text-sm font-medium">
             <button onClick={() => setShowInvite(true)} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] hover:bg-white"><Share2 size={18} /> Compartilhar conta</button>
-            <a className="flex items-center gap-3 rounded-xl px-4 py-3 text-[#727b77] hover:bg-white" href="#"><Settings size={18} /> Configurações</a>
+            <button onClick={() => window.alert('As configurações da conta estarão disponíveis em breve.')} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] hover:bg-white"><Settings size={18} /> Configurações</button>
             <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#727b77] transition hover:bg-[#fff1ef] hover:text-[#a33c30]"><LogOut size={18} /> Sair da conta</button>
           </nav>
           <div className="mt-auto hidden rounded-2xl bg-[#e7f3d6] p-4 lg:block"><p className="mb-2 text-xs font-bold text-[#32513d]">Dica do mês</p><p className="text-xs leading-relaxed text-[#5d7561]">Vocês já economizaram 12% comparado ao mês passado.</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#c8dfaf]"><div className="h-full w-[72%] rounded-full bg-[#94bd53]" /></div></div>
         </aside>
 
         <section className="min-w-0 flex-1 px-5 pb-12 pt-8 lg:px-10 lg:pt-12">
-          <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Terça-feira, 03 de junho de 2025</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Bom dia, Marina.</h1></div><button onClick={() => setShowInvite(true)} className="flex w-fit items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36] shadow-[0_5px_15px_rgba(141,183,61,.18)] transition hover:-translate-y-0.5"><Plus size={17} /> Adicionar gasto</button></div>
+          <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Terça-feira, 03 de junho de 2025</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Bom dia, Marina.</h1></div><button onClick={() => setShowExpense(true)} className="flex w-fit items-center gap-2 rounded-xl bg-[#c8f169] px-4 py-3 text-sm font-bold text-[#203f36] shadow-[0_5px_15px_rgba(141,183,61,.18)] transition hover:-translate-y-0.5"><Plus size={17} /> Adicionar gasto</button></div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl bg-[#203f36] p-6 text-white shadow-[0_12px_30px_rgba(32,63,54,.13)] md:col-span-2"><div className="flex items-start justify-between"><div><p className="text-sm text-[#a8c0b2]">Total gasto em junho</p><p className="mt-2 text-4xl font-bold tracking-[-0.05em]">{formatCurrency(total)}</p></div><div className="rounded-xl bg-white/10 p-3 text-[#c8f169]"><Wallet size={22} /></div></div><div className="mt-7 flex items-end justify-between"><div><div className="mb-2 flex items-center gap-2 text-xs text-[#a8c0b2]"><span className="flex items-center gap-1 text-[#c8f169]"><ArrowDownLeft size={13} /> 8,4%</span> vs. mês passado</div><div className="h-2 w-48 overflow-hidden rounded-full bg-white/15"><div className="h-full w-[61%] rounded-full bg-[#c8f169]" /></div></div><p className="text-right text-xs text-[#a8c0b2]">limite mensal<br /><strong className="text-sm text-white">R$ 3.800,00</strong></p></div></div>
@@ -101,6 +119,8 @@ export default function Page() {
           </div>
         </section>
       </div>
+
+      {showExpense && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowExpense(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f3d6] text-[#668c35]"><Plus size={22} /></div><h2 className="text-2xl font-bold tracking-tight text-[#203f36]">Adicionar gasto</h2><p className="mt-2 text-sm text-[#7c8881]">Registre uma despesa para a conta compartilhada.</p><div className="mt-6 space-y-4"><label className="block text-sm font-semibold text-[#35433d]">Descrição<input value={expenseTitle} onChange={(event) => setExpenseTitle(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="Ex.: Mercado do mês" /></label><label className="block text-sm font-semibold text-[#35433d]">Valor<input value={expenseAmount} onChange={(event) => setExpenseAmount(event.target.value)} type="number" min="0.01" step="0.01" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="0,00" /></label><label className="block text-sm font-semibold text-[#35433d]">Categoria<select value={expenseCategory} onChange={(event) => setExpenseCategory(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] bg-white px-4 py-3 outline-none focus:border-[#9bc65b]"><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option></select></label></div><button onClick={addExpense} className="mt-6 w-full rounded-xl bg-[#203f36] py-3.5 text-sm font-bold text-white transition hover:bg-[#2d5549]">Salvar gasto</button></div></div>}
 
       {showInvite && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowInvite(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f3d6] text-[#668c35]"><Share2 size={22} /></div><h2 className="text-2xl font-bold tracking-tight text-[#203f36]">Convide alguém para a conta</h2><p className="mt-2 text-sm leading-relaxed text-[#7c8881]">Compartilhe este link com sua namorada ou com quem participa dos gastos. Só entra quem tiver o convite.</p><div className="mt-6 rounded-2xl border border-dashed border-[#bdd397] bg-[#f5faed] p-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#789b40]">Link de convite</p><p className="break-all text-sm font-bold text-[#375033]">https://{inviteLink}</p></div><button onClick={copyInvite} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#203f36] py-3.5 text-sm font-bold text-white transition hover:bg-[#2d5549]"><Copy size={16} /> {copied ? 'Link copiado' : 'Copiar link'}</button><p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-[#98a19c]"><CircleHelp size={13} /> O convite expira em 7 dias</p></div></div>}
     </main>
