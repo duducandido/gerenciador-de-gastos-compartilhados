@@ -48,7 +48,7 @@ export async function updateHouseholdSettings(input: { profileName: string; hous
   if (!membership[0]) throw new Error('Conta compartilhada não encontrada')
 
   await db.update(user).set({ name: profileName, updatedAt: new Date() }).where(eq(user.id, userId))
-  await db.update(household).set({ name: householdName }).where(and(eq(household.id, membership[0].householdId), eq(household.createdBy, userId)))
+  await db.update(household).set({ name: householdName }).where(eq(household.id, membership[0].householdId))
   revalidatePath('/')
   return { profileName, householdName }
 }
