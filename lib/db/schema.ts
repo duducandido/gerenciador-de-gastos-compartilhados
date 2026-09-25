@@ -134,6 +134,29 @@ export const payableBill = pgTable('payable_bill', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
+export const settlement = pgTable('settlement', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull(),
+  fromUserId: text('from_user_id').notNull(),
+  toUserId: text('to_user_id').notNull(),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  note: text('note'),
+  settledAt: timestamp('settled_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const recurringBill = pgTable('recurring_bill', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  title: text('title').notNull(),
+  person: text('person').notNull(),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  dueDay: integer('due_day').notNull(),
+  active: boolean('active').notNull().default(true),
+  lastGeneratedAt: timestamp('last_generated_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 export const goal = pgTable('goal', {
   id: text('id').primaryKey(),
   householdId: text('householdId').notNull(),

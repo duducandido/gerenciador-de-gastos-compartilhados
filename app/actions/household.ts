@@ -6,7 +6,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { household, householdMember, user, savingsGoal, payableBill, expense } from '@/lib/db/schema'
+import { household, householdMember, user, savingsGoal, payableBill, expense, settlement, recurringBill } from '@/lib/db/schema'
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -157,6 +157,46 @@ export async function payNextInstallment(id: number) {
   if (!bill) throw new Error('Conta não encontrada')
   const paidInstallments = Math.min(bill.totalInstallments, bill.paidInstallments + 1)
   const [updated] = await db.update(payableBill).set({ paidInstallments, status: paidInstallments >= bill.totalInstallments ? 'paid' : 'pending' }).where(and(eq(payableBill.id, id), eq(payableBill.userId, userId))).returning()
+  revalidatePath('/')
+  return updated
+}
+
+export async function createSettlement(input: { toUserId: string; amount: number; note?: string }) {
+  const userId = await getUserId()
+  const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
+  const amount = Number(input.amount)
+  if (!membership[0] || !input.toUserId || input.toUserId === userId || !Number.isFinite(amount) || amount <= 0) throw new Error('Confira os dados do acerto')
+  const [created] = await db.insert(settlement).values({ id: randomUUID(), householdId: membership[0].householdId, fromUserId: userId, toUserId: input.toUserId, amount: amount.toFixed(2), note: input.note?.trim().slice(0, 160) || null }).returning()
+  revalidatePath('/')
+  return created
+}
+
+export async function getSettlements() {
+  const userId = await getUserId()
+  const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
+  if (!membership[0]) return []
+  return db.select().from(settlement).where(eq(settlement.householdId, membership[0].householdId)).orderBy(settlement.settledAt)
+}
+
+export async function createRecurringBill(input: { title: string; person: string; amount: number; dueDay: number }) {
+  const userId = await getUserId()
+  const title = input.title.trim().slice(0, 100)
+  const person = input.person.trim().slice(0, 80)
+  const amount = Number(input.amount)
+  if (!title || !person || !Number.isFinite(amount) || amount <= 0 || input.dueDay < 1 || input.dueDay > 31) throw new Error('Confira os dados da conta recorrente')
+  const [created] = await db.insert(recurringBill).values({ id: randomUUID(), userId, title, person, amount: amount.toFixed(2), dueDay: Math.floor(input.dueDay) }).returning()
+  revalidatePath('/')
+  return created
+}
+
+export async function getRecurringBills() {
+  const userId = await getUserId()
+  return db.select().from(recurringBill).where(eq(recurringBill.userId, userId)).orderBy(recurringBill.dueDay)
+}
+
+export async function toggleRecurringBill(id: string, active: boolean) {
+  const userId = await getUserId()
+  const [updated] = await db.update(recurringBill).set({ active }).where(and(eq(recurringBill.id, id), eq(recurringBill.userId, userId))).returning()
   revalidatePath('/')
   return updated
 }
