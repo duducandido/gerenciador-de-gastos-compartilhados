@@ -15,6 +15,7 @@ import {
   Check,
   ChevronDown,
   CircleHelp,
+  Clock3,
   Copy,
   Home,
   LayoutDashboard,
