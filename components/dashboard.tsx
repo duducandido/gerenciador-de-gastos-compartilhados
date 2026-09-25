@@ -90,6 +90,8 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [customCategories, setCustomCategories] = useState<string[]>([])
   const [newCategory, setNewCategory] = useState('')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([])
   const [browserNotifications, setBrowserNotifications] = useState(false)
   const [history, setHistory] = useState<Array<{ id: number; label: string; detail: string; time: string }>>([])
   const [members, setMembers] = useState([{ id: 1, name: profileName, role: 'Administrador' }])
@@ -195,6 +197,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
     ...(upcomingBills.length ? [{ title: `${upcomingBills.length} conta${upcomingBills.length > 1 ? 's' : ''} vencendo em breve`, detail: upcomingBills.map((bill) => bill.title).join(', ') }] : []),
     ...(monthlyLimit && budgetUsage >= 80 ? [{ title: budgetUsage >= 100 ? 'Limite mensal ultrapassado' : 'Você está perto do limite mensal', detail: `${Math.round(budgetUsage)}% do limite já comprometido` }] : []),
   ]
+  const activeAlerts = alerts.filter((alert) => !dismissedAlerts.includes(alert.title))
   const availableBalance = Math.max(0, Number(monthlyLimit.replace(',', '.')) - total - reservedTotal - billsTotal)
 
   async function addContribution() {
@@ -330,7 +333,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
             <div><p className="text-[17px] font-bold tracking-tight">casal.</p><p className="text-[10px] font-medium uppercase tracking-[0.19em] text-[#89918e]">finanças a dois</p></div>
           </div>
           <div className="hidden items-center gap-3 md:flex">
-            <button onClick={() => setNotificationsEnabled((enabled) => !enabled)} className={`rounded-full p-2.5 transition hover:bg-white hover:text-[#203f36] ${notificationsEnabled ? 'text-[#203f36]' : 'text-[#b0b8b4]'}`} aria-label={notificationsEnabled ? 'Desativar notificações' : 'Ativar notificações'} aria-pressed={notificationsEnabled}><Bell size={18} /></button>
+            <div className="relative"><button onClick={() => { setNotificationsOpen((open) => !open); setNotificationsEnabled(true) }} className={`relative rounded-full p-2.5 transition hover:bg-white hover:text-[#203f36] ${notificationsEnabled ? 'text-[#203f36]' : 'text-[#b0b8b4]'}`} aria-label="Abrir central de notificações" aria-expanded={notificationsOpen}><Bell size={18} />{activeAlerts.length > 0 && <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--accent-user)] text-[9px] font-bold text-[#203f36]">{activeAlerts.length}</span>}</button>{notificationsOpen && <div role="dialog" aria-label="Central de notificações" className="absolute right-0 top-12 z-40 w-80 rounded-2xl border border-[#e3e9e5] bg-white p-4 text-left shadow-xl"><div className="flex items-center justify-between"><h2 className="text-sm font-bold text-[#203f36]">Notificações</h2><button type="button" onClick={() => setNotificationsOpen(false)} className="rounded-lg p-1 text-[#8a938f]" aria-label="Fechar notificações"><X size={16} /></button></div>{activeAlerts.length > 0 ? <div className="mt-3 space-y-3">{activeAlerts.map((alert) => <div key={alert.title} className="rounded-xl bg-[var(--accent-soft)] p-3"><p className="text-xs font-bold text-[var(--accent-ink)]">{alert.title}</p><p className="mt-1 text-xs leading-relaxed text-[#6f7c74]">{alert.detail}</p><button type="button" onClick={() => setDismissedAlerts((current) => [...current, alert.title])} className="mt-2 text-[11px] font-semibold text-[var(--accent-ink)] underline">Marcar como lida</button></div>)}</div> : <p className="mt-4 rounded-xl bg-[#f5f7f5] p-4 text-center text-xs text-[#8a938f]">Tudo certo por aqui.</p>}</div>}</div>
             <div className="h-8 w-px bg-[#dfe3e1]" />
             <button onClick={() => setShowAvatarEditor(true)} className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-sm" aria-label="Editar foto do perfil"><span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-[#713d22]" style={{ backgroundColor: avatarColor }}>{avatarImage ? <img src={avatarImage} alt="Foto do perfil" className="h-full w-full object-cover" /> : avatarInitials}</span><span className="text-sm font-semibold">{groupNames}</span><ChevronDown size={15} className="text-[#99a09e]" /></button>
           </div>
