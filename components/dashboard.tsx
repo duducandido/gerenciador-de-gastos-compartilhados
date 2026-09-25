@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
-import { createPayableBill, createSavingsGoal, deletePayableBill, deleteSavingsGoal, payNextInstallment, contributeToSavingsGoal, updateAppearance, updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
+import { createExpense, createPayableBill, createSavingsGoal, deleteExpense, deletePayableBill, deleteSavingsGoal, payNextInstallment, contributeToSavingsGoal, updateAppearance, updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -33,7 +33,7 @@ import {
   Trash2,
 } from 'lucide-react'
 
-const expenses: Array<{ title: string; category: string; date: string; amount: number; icon: typeof Wallet; color: string }> = []
+const expenses: Array<{ id: string; title: string; category: string; date: string; amount: number; paidBy: string; icon: typeof Wallet; color: string }> = []
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -44,11 +44,12 @@ type DashboardProps = {
   initialAccentColor: string
   initialTheme: 'light' | 'dark'
   initialAccountCreatedAt: string
+  initialExpenses: Array<{ id: string; title: string; category: string; date: string; amount: number; paidBy: string }>
   initialSavings: Array<{ id: number; name: string; targetAmount: number; installmentAmount: number; savedAmount: number; dueDay: number }>
   initialPayableBills: Array<{ id: number; person: string; title: string; totalAmount: number; installmentAmount: number; totalInstallments: number; paidInstallments: number; dueDay: number; status: string }>
 }
 
-export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialSavings, initialPayableBills }: DashboardProps) {
+export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills }: DashboardProps) {
   const accountCreatedAt = new Date(initialAccountCreatedAt)
   const currentDate = new Date()
   const monthsSinceAccountCreation = (currentDate.getFullYear() - accountCreatedAt.getFullYear()) * 12 + currentDate.getMonth() - accountCreatedAt.getMonth()
@@ -73,7 +74,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [signingOut, setSigningOut] = useState(false)
   const [showAvatarEditor, setShowAvatarEditor] = useState(false)
   const [avatarImage, setAvatarImage] = useState<string | null>(initialAvatarImage)
-  const [expenseItems, setExpenseItems] = useState(expenses)
+  const [expenseItems, setExpenseItems] = useState(() => initialExpenses.map((item) => ({ ...item, icon: Wallet, color: 'bg-emerald-100 text-emerald-700' })))
   const [expenseError, setExpenseError] = useState('')
   const [avatarColor, setAvatarColor] = useState('#f2c9a8')
   const [accentColor, setAccentColor] = useState(initialAccentColor)
@@ -152,13 +153,19 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
     setNewCategory('')
   }
 
-  function addExpense() {
+  async function addExpense() {
     const amount = Number(expenseAmount.replace(',', '.'))
     if (!expenseTitle.trim() || !Number.isFinite(amount) || amount <= 0) {
       setExpenseError('Informe uma descrição e um valor maior que zero.')
       return
     }
-    setExpenseItems((current) => [{ title: expenseTitle.trim(), category: expenseCategory, date: `Agora · ${expensePaidBy} pagou`, amount, icon: Wallet, color: 'bg-emerald-100 text-emerald-700' }, ...current])
+    try {
+      const created = await createExpense({ title: expenseTitle, category: expenseCategory, amount, paidBy: expensePaidBy })
+      setExpenseItems((current) => [{ id: created.id, title: created.title, category: created.category, date: created.spentAt.toString(), amount: Number(created.amount), paidBy: expensePaidBy, icon: Wallet, color: 'bg-emerald-100 text-emerald-700' }, ...current])
+    } catch {
+      setExpenseError('Não foi possível salvar o gasto. Tente novamente.')
+      return
+    }
     setHistory((current) => [{ id: Date.now(), label: 'Novo gasto registrado', detail: `${expenseTitle.trim()} · ${formatCurrency(amount)}`, time: 'Agora' }, ...current])
     setExpenseTitle('')
     setExpenseAmount('')
@@ -371,7 +378,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
         {activeTab === 'expenses' && <section className="min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-5 sm:pb-12 sm:pt-8 lg:px-10 lg:pt-12">
           <div className="mb-9 flex items-end justify-between gap-4"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Movimentações da conta</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Gastos</h1><p className="mt-2 text-sm text-[#7c8881]">Acompanhe e organize todas as despesas do mês.</p></div><button onClick={() => setShowExpense(true)} className="flex w-fit items-center gap-2 rounded-xl bg-[var(--accent-user)] px-4 py-3 text-sm font-bold text-[#203f36]"><Plus size={17} /> Adicionar gasto</button></div>
           <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl bg-[#203f36] p-4 sm:p-6 text-white"><p className="text-sm text-[#a8c0b2]">Total no período</p><p className="mt-2 text-3xl font-bold">{formatCurrency(visibleExpenses.reduce((sum, item) => sum + item.amount, 0))}</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-4 sm:p-6"><p className="text-sm text-[#8a938f]">Quantidade</p><p className="mt-2 text-3xl font-bold text-[#203f36]">{visibleExpenses.length}</p></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-4 sm:p-6"><p className="text-sm text-[#8a938f]">Média por gasto</p><p className="mt-2 text-3xl font-bold text-[#203f36]">{formatCurrency(visibleExpenses.length ? visibleExpenses.reduce((sum, item) => sum + item.amount, 0) / visibleExpenses.length : 0)}</p></div></div>
-          <div className="mt-8 rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><h2 className="text-lg font-bold text-[#203f36]">Todos os gastos</h2><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#7c8881]">Período<select aria-label="Filtrar por período" value={expenseMonth} onChange={(event) => setExpenseMonth(event.target.value)} className="rounded-lg border border-[#dce4df] bg-white px-2 py-1.5 text-xs text-[#35433d]"><option value="current">Mês atual</option><option value="previous">Mês anterior</option><option value="all">Todos os períodos</option></select></label><label className="flex items-center gap-2 text-xs font-semibold text-[#7c8881]">Categoria<select value={expenseFilter} onChange={(event) => setExpenseFilter(event.target.value)} className="rounded-lg border border-[#dce4df] bg-white px-2 py-1.5 text-xs text-[#35433d]"><option>Todas</option><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option>{customCategories.map((category) => <option key={category}>{category}</option>)}</select></label></div><div className="mt-5 flex flex-col gap-2">{visibleExpenses.length ? visibleExpenses.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 hover:bg-[#f8faf7]"><div className="flex items-center gap-3"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div><p className="text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><p className="text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p></div> }) : <div className="rounded-xl border border-dashed border-[#dce4df] px-4 py-8 text-center text-sm text-[#8a938f]">Nenhum gasto encontrado nessa categoria.</div>}</div>        </div></div>
+          <div className="mt-8 rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><h2 className="text-lg font-bold text-[#203f36]">Todos os gastos</h2><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#7c8881]">Período<select aria-label="Filtrar por período" value={expenseMonth} onChange={(event) => setExpenseMonth(event.target.value)} className="rounded-lg border border-[#dce4df] bg-white px-2 py-1.5 text-xs text-[#35433d]"><option value="current">Mês atual</option><option value="previous">Mês anterior</option><option value="all">Todos os períodos</option></select></label><label className="flex items-center gap-2 text-xs font-semibold text-[#7c8881]">Categoria<select value={expenseFilter} onChange={(event) => setExpenseFilter(event.target.value)} className="rounded-lg border border-[#dce4df] bg-white px-2 py-1.5 text-xs text-[#35433d]"><option>Todas</option><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option>{customCategories.map((category) => <option key={category}>{category}</option>)}</select></label></div><div className="mt-5 flex flex-col gap-2">{visibleExpenses.length ? visibleExpenses.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 hover:bg-[#f8faf7]"><div className="flex items-center gap-3"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div><p className="text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><div className="flex items-center gap-3"><p className="text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p><button type="button" onClick={async () => { if (!window.confirm(`Excluir o gasto ${expense.title}?`)) return; await deleteExpense(expense.id); setExpenseItems((current) => current.filter((item) => item.id !== expense.id)) }} className="rounded-lg p-2 text-[#8a938f] hover:bg-[#fff1ef] hover:text-red-600" aria-label={`Excluir gasto ${expense.title}`}><Trash2 size={15} /></button></div></div> }) : <div className="rounded-xl border border-dashed border-[#dce4df] px-4 py-8 text-center text-sm text-[#8a938f]">Nenhum gasto encontrado nessa categoria.</div>}</div>        </div></div>
         </section>}
 
         {activeTab === 'calendar' && <section className="min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-5 sm:pb-12 sm:pt-8 lg:px-10 lg:pt-12"><div className="mb-9"><p className="mb-2 text-sm font-medium text-[#8a938f]">Planejamento mensal</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Calendário</h1><p className="mt-2 text-sm text-[#7c8881]">Visualize vencimentos, contas recorrentes e lembretes.</p></div><div className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]"><div className="rounded-2xl border border-[#e5e9e7] bg-white p-4 sm:p-6"><div className="mb-6 flex items-center justify-between"><div><p className="text-sm font-semibold text-[#203f36]">{currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p><p className="mt-1 text-xs text-[#8a938f]">Nenhuma conta planejada ainda</p></div><button onClick={() => setShowExpense(true)} className="flex items-center gap-2 rounded-xl bg-[#c8f169] px-3 py-2 text-xs font-bold text-[#203f36]"><Plus size={15} /> Lançar conta</button></div><div className="grid grid-cols-7 gap-2 text-center text-xs"><div className="col-span-7 grid grid-cols-7 pb-2 font-bold text-[#9aa29e]">{['D','S','T','Q','Q','S','S'].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>{Array.from({ length: 30 }, (_, index) => { const day = index + 1; const highlighted = bills.some((bill) => bill.dueDay === day) || savings.some((saving) => saving.dueDay === day); return <button key={day} type="button" onClick={() => setSelectedDay(day)} aria-label={`Selecionar dia ${day}`} className={`relative rounded-xl p-3 font-semibold transition hover:bg-[#f1f8e6] ${day === selectedDay ? 'bg-[#203f36] text-white' : 'text-[#53635a]'}`}>{day}{highlighted && <span className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${day === selectedDay ? 'bg-[#c8f169]' : 'bg-[#9bc65b]'}`} />}</button> })}</div></div><div className="rounded-2xl border border-[#e5e9e7] bg-white p-4 sm:p-6"><h2 className="text-lg font-bold text-[#203f36]">Próximos lembretes</h2><p className="mt-1 text-xs text-[#8a938f]">{selectedDay ? `Dia selecionado: ${selectedDay}` : 'Selecione uma data para ver os lembretes'} de junho</p><div className="mt-5 space-y-3"><Reminder title="Nenhuma conta cadastrada" date="Dia 05" amount="R$ 0,00"/><Reminder title="Cadastre um lembrete" date="Dia 10" amount="R$ 0,00"/><Reminder title="Cartão de cr��dito" date="Dia 15" amount="R$ 0,00"/></div><button className="mt-5 w-full rounded-xl border border-[#dce4df] py-3 text-sm font-bold text-[#52645a] hover:bg-[#f8faf7]">Gerenciar lembretes</button></div></div></section>}

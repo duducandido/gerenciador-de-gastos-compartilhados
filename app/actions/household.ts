@@ -6,7 +6,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { household, householdMember, user, savingsGoal, payableBill } from '@/lib/db/schema'
+import { household, householdMember, user, savingsGoal, payableBill, expense } from '@/lib/db/schema'
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -67,6 +67,35 @@ export async function updateProfileAvatar(image: string | null) {
   await db.update(user).set({ image, updatedAt: new Date() }).where(eq(user.id, userId))
   revalidatePath('/')
   return { image }
+}
+
+export async function getExpenses() {
+  const userId = await getUserId()
+  const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
+  if (!membership[0]) return []
+  return db.select().from(expense).where(eq(expense.householdId, membership[0].householdId)).orderBy(expense.spentAt)
+}
+
+export async function createExpense(input: { title: string; category: string; amount: number; paidBy: string }) {
+  const userId = await getUserId()
+  const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
+  if (!membership[0]) throw new Error('Conta compartilhada não encontrada')
+  const title = input.title.trim().slice(0, 100)
+  const category = input.category.trim().slice(0, 40)
+  const amount = Number(input.amount)
+  if (!title || !category || !Number.isFinite(amount) || amount <= 0 || amount > 100000000) throw new Error('Confira os dados do gasto')
+  const [created] = await db.insert(expense).values({ id: randomUUID(), householdId: membership[0].householdId, title, category, amount: amount.toFixed(2), createdBy: userId }).returning()
+  revalidatePath('/')
+  return { ...created, amount: Number(created.amount), paidBy: input.paidBy }
+}
+
+export async function deleteExpense(id: string) {
+  const userId = await getUserId()
+  const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
+  if (!membership[0]) throw new Error('Conta compartilhada não encontrada')
+  await db.delete(expense).where(and(eq(expense.id, id), eq(expense.householdId, membership[0].householdId)))
+  revalidatePath('/')
+  return id
 }
 
 export async function getSavingsGoals() {
