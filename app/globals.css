@@ -185,10 +185,13 @@ html.dark {
 html.dark body, html.dark .auth-screen { background: #050706 !important; }
 @media (prefers-color-scheme: dark) {
   .auth-screen { background: #050706 !important; color: #edf5ef !important; }
+  .auth-screen .auth-error,
+  .auth-screen .auth-error span { background: #111713 !important; color: #edf5ef !important; border-color: #26332d !important; }
   .auth-card { background: #111713 !important; border-color: #26332d !important; }
   .auth-screen input { background: #0b0f0d !important; color: #edf5ef !important; border-color: #30423a !important; }
   .auth-screen h1, .auth-screen p, .auth-screen label { color: #edf5ef !important; }
   .auth-screen input::placeholder { color: #74827a !important; }
+  .auth-screen .auth-error { background: #111713 !important; border-color: #26332d !important; color: #edf5ef !important; }
 }
 html.dark header { background-color: rgb(5 7 6 / 95%) !important; border-color: #26332d !important; }
 html.dark aside { background-color: #050706 !important; border-color: #26332d !important; }
@@ -197,7 +200,7 @@ html.dark .bg-\[\#f7f8fa\], html.dark .bg-\[\#f1f8e5\], html.dark .bg-\[\#f1f8e6
 html.dark .bg-\[\#fff8f6\] { background-color: #1b100e !important; }
 html.dark .bg-\[\#fff1ef\] { background-color: #241310 !important; }
 .auth-error { background-color: #f7f8fa; border-color: #203f36; color: #203f36; }
-html.dark .auth-error { background-color: #050706 !important; border-color: #c8f169 !important; color: #edf5ef !important; }
+html.dark .auth-error { background-color: #111713 !important; border-color: #26332d !important; color: #edf5ef !important; }
 .auth-error:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-user) 35%, transparent); }
 html.dark .bg-\[\#e7f3d6\], html.dark .bg-\[\#eaf5dd\], html.dark .bg-\[\#c8dfaf\], html.dark .bg-\[\#9bc65b\] { background-color: color-mix(in srgb, var(--accent-user) 20%, #111713) !important; }
 html.dark .bg-\[\#203f36\] { background-color: var(--accent-surface) !important; }
