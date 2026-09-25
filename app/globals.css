@@ -196,9 +196,9 @@ html.dark [class~="bg-white"], html.dark [class*="bg-white/"] { background-color
 html.dark .bg-\[\#f7f8fa\], html.dark .bg-\[\#f1f8e5\], html.dark .bg-\[\#f1f8e6\], html.dark .bg-\[\#f8faf7\], html.dark .bg-\[\#f4f7f2\], html.dark .bg-\[\#edf0ee\] { background-color: #0b0f0d !important; }
 html.dark .bg-\[\#fff8f6\] { background-color: #1b100e !important; }
 html.dark .bg-\[\#fff1ef\] { background-color: #241310 !important; }
-.auth-error { background-color: #ffe4df; border-color: #c95749; color: #70251d; }
-html.dark .auth-error { background-color: #4a1e1a !important; border-color: #ff8f82 !important; color: #fff4f1 !important; }
-.auth-error:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, #ff8f82 35%, transparent); }
+.auth-error { background-color: #f7f8fa; border-color: #203f36; color: #203f36; }
+html.dark .auth-error { background-color: #050706 !important; border-color: #c8f169 !important; color: #edf5ef !important; }
+.auth-error:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-user) 35%, transparent); }
 html.dark .bg-\[\#e7f3d6\], html.dark .bg-\[\#eaf5dd\], html.dark .bg-\[\#c8dfaf\], html.dark .bg-\[\#9bc65b\] { background-color: color-mix(in srgb, var(--accent-user) 20%, #111713) !important; }
 html.dark .bg-\[\#203f36\] { background-color: var(--accent-surface) !important; }
 html.dark .text-\[\#c8f169\], html.dark .text-\[\#719b37\], html.dark .text-\[\#789b40\] { color: var(--accent-user) !important; }
