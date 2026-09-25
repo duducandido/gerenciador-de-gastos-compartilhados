@@ -157,6 +157,29 @@ export const recurringBill = pgTable('recurring_bill', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+export const activityLog = pgTable('activity_log', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull(),
+  userId: text('user_id').notNull(),
+  action: text('action').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: text('entity_id'),
+  details: text('details'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const expenseAttachment = pgTable('expense_attachment', {
+  id: text('id').primaryKey(),
+  expenseId: text('expense_id').notNull(),
+  householdId: text('household_id').notNull(),
+  userId: text('user_id').notNull(),
+  pathname: text('pathname').notNull(),
+  filename: text('filename').notNull(),
+  contentType: text('content_type').notNull(),
+  size: integer('size').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 export const goal = pgTable('goal', {
   id: text('id').primaryKey(),
   householdId: text('householdId').notNull(),

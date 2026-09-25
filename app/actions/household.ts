@@ -6,7 +6,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { household, householdMember, user, savingsGoal, payableBill, expense, settlement, recurringBill } from '@/lib/db/schema'
+import { household, householdMember, user, savingsGoal, payableBill, expense, settlement, recurringBill, activityLog } from '@/lib/db/schema'
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -69,6 +69,17 @@ export async function updateProfileAvatar(image: string | null) {
   return { image }
 }
 
+export async function getActivityLog() {
+  const userId = await getUserId()
+  const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
+  if (!membership[0]) return []
+  return db.select().from(activityLog).where(eq(activityLog.householdId, membership[0].householdId)).orderBy(activityLog.createdAt)
+}
+
+async function logActivity(userId: string, householdId: string, action: string, entityType: string, entityId: string, details: string) {
+  await db.insert(activityLog).values({ id: randomUUID(), householdId, userId, action, entityType, entityId, details })
+}
+
 export async function getExpenses() {
   const userId = await getUserId()
   const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
@@ -85,6 +96,7 @@ export async function createExpense(input: { title: string; category: string; am
   const amount = Number(input.amount)
   if (!title || !category || !Number.isFinite(amount) || amount <= 0 || amount > 100000000) throw new Error('Confira os dados do gasto')
   const [created] = await db.insert(expense).values({ id: randomUUID(), householdId: membership[0].householdId, title, category, amount: amount.toFixed(2), createdBy: userId }).returning()
+  await logActivity(userId, membership[0].householdId, 'created', 'expense', created.id, `Criou o gasto ${title}`)
   revalidatePath('/')
   return { ...created, amount: Number(created.amount), paidBy: input.paidBy }
 }
