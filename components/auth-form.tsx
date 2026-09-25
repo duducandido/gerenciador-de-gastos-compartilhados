@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
@@ -14,7 +14,12 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const errorRef = useRef<HTMLParagraphElement>(null)
   const isSignUp = mode === 'sign-up'
+
+  useEffect(() => {
+    if (error) errorRef.current?.focus()
+  }, [error])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -51,7 +56,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               </button>
             </span>
           </label>
-          {error && <p className="rounded-xl bg-[#fff1ef] px-3 py-2 text-sm text-[#a33c30]" role="alert">{error}</p>}
+          {error && <p ref={errorRef} tabIndex={-1} className="auth-error flex items-start gap-2 rounded-xl border px-3 py-3 text-sm font-semibold leading-relaxed outline-none focus-visible:ring-4" role="alert" aria-live="assertive"><span aria-hidden="true" className="mt-0.5 shrink-0 font-bold">!</span><span>{error}</span></p>}
           <button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-[#203f36] text-sm font-bold text-white transition hover:bg-[#2d5549] disabled:opacity-60">{loading ? 'Aguarde...' : isSignUp ? 'Criar minha conta' : 'Entrar'}</button>
         </form>
         <p className="mt-7 text-center text-sm text-[#7c8881]">{isSignUp ? 'Já têm uma conta? ' : 'Ainda não têm uma conta? '}<Link href={isSignUp ? '/sign-in' : '/sign-up'} className="font-bold text-[#668c35] hover:underline">{isSignUp ? 'Entrar' : 'Criar conta'}</Link></p>
