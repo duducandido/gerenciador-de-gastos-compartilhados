@@ -2,6 +2,11 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-user) 72%, #203f36);
+  outline-offset: 3px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
