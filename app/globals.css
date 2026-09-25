@@ -185,6 +185,8 @@ html.dark {
 html.dark body, html.dark .auth-screen { background: #050706 !important; }
 @media (prefers-color-scheme: dark) {
   .auth-screen { background: #050706 !important; color: #edf5ef !important; }
+  .auth-screen .auth-error,
+  .auth-screen .auth-error span { background: #111713 !important; color: #edf5ef !important; border-color: #26332d !important; }
   .auth-card { background: #111713 !important; border-color: #26332d !important; }
   .auth-screen input { background: #0b0f0d !important; color: #edf5ef !important; border-color: #30423a !important; }
   .auth-screen h1, .auth-screen p, .auth-screen label { color: #edf5ef !important; }
