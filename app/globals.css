@@ -2,6 +2,11 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-user) 72%, #203f36);
+  outline-offset: 3px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -151,6 +156,66 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+}
+
+html {
+  --app-bg: #f7f8fa;
+  --app-text: #20252b;
+  --accent-user: #c8f169;
+  --accent-surface: color-mix(in srgb, var(--accent-user) 72%, #102018);
+  --accent-soft: color-mix(in srgb, var(--accent-user) 22%, white);
+  --accent-ink: color-mix(in srgb, var(--accent-user) 62%, #203f36);
+}
+
+/* Todas as superfícies de marca acompanham a cor escolhida nas configurações. */
+.bg-\[\#203f36\] { background-color: var(--accent-surface) !important; }
+.text-\[\#c8f169\] { color: var(--accent-user) !important; }
+.bg-\[\#c8f169\] { background-color: var(--accent-user) !important; }
+.bg-\[\#e7f3d6\], .bg-\[\#eaf5dd\], .bg-\[\#9bc65b\] { background-color: var(--accent-soft) !important; }
+.text-\[\#32513d\], .text-\[\#557932\], .text-\[\#719b37\], .text-\[\#789b40\] { color: var(--accent-ink) !important; }
+.border-\[\#203f36\], .outline-\[\#203f36\] { border-color: var(--accent-user) !important; outline-color: var(--accent-user) !important; }
+
+
+html.dark {
+  --app-bg: #050706;
+  --app-text: #edf5ef;
+  color-scheme: dark;
+}
+
+html.dark body, html.dark .auth-screen { background: #050706 !important; }
+@media (prefers-color-scheme: dark) {
+  .auth-screen { background: #050706 !important; color: #edf5ef !important; }
+  .auth-card { background: #111713 !important; border-color: #26332d !important; }
+  .auth-screen input { background: #0b0f0d !important; color: #edf5ef !important; border-color: #30423a !important; }
+  .auth-screen h1, .auth-screen p, .auth-screen label { color: #edf5ef !important; }
+  .auth-screen input::placeholder { color: #74827a !important; }
+}
+html.dark header { background-color: rgb(5 7 6 / 95%) !important; border-color: #26332d !important; }
+html.dark aside { background-color: #050706 !important; border-color: #26332d !important; }
+html.dark [class~="bg-white"], html.dark [class*="bg-white/"] { background-color: #111713 !important; }
+html.dark .bg-\[\#f7f8fa\], html.dark .bg-\[\#f1f8e5\], html.dark .bg-\[\#f1f8e6\], html.dark .bg-\[\#f8faf7\], html.dark .bg-\[\#f4f7f2\], html.dark .bg-\[\#edf0ee\] { background-color: #0b0f0d !important; }
+html.dark .bg-\[\#fff8f6\] { background-color: #1b100e !important; }
+html.dark .bg-\[\#fff1ef\] { background-color: #241310 !important; }
+html.dark .bg-\[\#e7f3d6\], html.dark .bg-\[\#eaf5dd\], html.dark .bg-\[\#c8dfaf\], html.dark .bg-\[\#9bc65b\] { background-color: color-mix(in srgb, var(--accent-user) 20%, #111713) !important; }
+html.dark .bg-\[\#203f36\] { background-color: var(--accent-surface) !important; }
+html.dark .text-\[\#c8f169\], html.dark .text-\[\#719b37\], html.dark .text-\[\#789b40\] { color: var(--accent-user) !important; }
+html.dark .outline-\[\#203f36\] { outline-color: var(--accent-user) !important; }
+html.dark .ring-\[\#dfe6e1\] { --tw-ring-color: #30423a !important; }
+html.dark .border-white { border-color: #111713 !important; }
+html.dark .text-\[\#789b40\], html.dark .text-\[\#719b37\], html.dark .text-\[\#8eaf55\] { color: var(--accent-user) !important; }
+html.dark .border-\[\#8eaf55\] { border-color: var(--accent-user) !important; }
+html.dark .text-\[\#203f36\], html.dark .text-\[\#35433d\] { color: #edf5ef !important; }
+html.dark .text-\[\#20252b\] { color: #edf5ef !important; }
+html.dark .text-\[\#727b77\], html.dark .text-\[\#8a938f\], html.dark .text-\[\#89918e\], html.dark .text-\[\#9aa29e\], html.dark .text-\[\#a1a9a5\], html.dark .text-\[\#a8c0b2\] { color: #9eaca4 !important; }
+html.dark .border-\[\#e5e9e7\], html.dark .border-\[\#e6e9ed\], html.dark .border-\[\#dce8c8\], html.dark .border-\[\#f0d6d1\], html.dark .border-\[\#dce4df\] { border-color: #26332d !important; }
+html.dark [class~="hover:bg-white"]:hover { background-color: #1b2720 !important; }
+html.dark input, html.dark select, html.dark textarea { background-color: #111713 !important; color: #edf5ef !important; border-color: #30423a !important; }
+html.dark input::placeholder, html.dark textarea::placeholder { color: #74827a !important; }
+
+@media print {
+  header, aside, button, [role="dialog"] { display: none !important; }
+  main { background: white !important; color: #203f36 !important; }
+  section { display: block !important; }
 }
 
 @layer base {

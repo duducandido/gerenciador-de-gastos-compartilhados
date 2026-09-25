@@ -9,6 +9,8 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('emailVerified').notNull().default(false),
   image: text('image'),
+  accentColor: text('accentColor').notNull().default('#c8f169'),
+  theme: text('theme').notNull().default('light'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })
@@ -130,6 +132,52 @@ export const payableBill = pgTable('payable_bill', {
   status: text('status').notNull().default('pending'),
   notes: text('notes'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const settlement = pgTable('settlement', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull(),
+  fromUserId: text('from_user_id').notNull(),
+  toUserId: text('to_user_id').notNull(),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  note: text('note'),
+  settledAt: timestamp('settled_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const recurringBill = pgTable('recurring_bill', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  title: text('title').notNull(),
+  person: text('person').notNull(),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  dueDay: integer('due_day').notNull(),
+  active: boolean('active').notNull().default(true),
+  lastGeneratedAt: timestamp('last_generated_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const activityLog = pgTable('activity_log', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull(),
+  userId: text('user_id').notNull(),
+  action: text('action').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: text('entity_id'),
+  details: text('details'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const expenseAttachment = pgTable('expense_attachment', {
+  id: text('id').primaryKey(),
+  expenseId: text('expense_id').notNull(),
+  householdId: text('household_id').notNull(),
+  userId: text('user_id').notNull(),
+  pathname: text('pathname').notNull(),
+  filename: text('filename').notNull(),
+  contentType: text('content_type').notNull(),
+  size: integer('size').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
 export const goal = pgTable('goal', {

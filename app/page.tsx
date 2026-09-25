@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { getMyHousehold, getSavingsGoals, getPayableBills } from '@/app/actions/household'
+import { getMyHousehold, getExpenses, getSavingsGoals, getPayableBills } from '@/app/actions/household'
 import Dashboard from '@/components/dashboard'
 import { HouseholdSetup } from '@/components/household-setup'
 
@@ -10,13 +10,16 @@ export default async function HomePage() {
   if (!session?.user) redirect('/sign-in')
   const membership = await getMyHousehold()
   if (!membership) return <HouseholdSetup name={session.user.name} />
-  const savings = await getSavingsGoals()
-  const payableBills = await getPayableBills()
+  const [expenses, savings, payableBills] = await Promise.all([getExpenses(), getSavingsGoals(), getPayableBills()])
   return (
     <Dashboard
       initialProfileName={session.user.name}
       initialHouseholdName={membership.household.name}
-      initialAvatarImage={session.user.image ?? null}
+  initialAvatarImage={session.user.image ?? null}
+  initialAccentColor={session.user.accentColor ?? '#c8f169'}
+  initialTheme={session.user.theme === 'dark' ? 'dark' : 'light'}
+      initialAccountCreatedAt={new Date(session.user.createdAt).toISOString()}
+      initialExpenses={expenses.map((item) => ({ id: item.id, title: item.title, category: item.category, date: item.spentAt.toISOString(), amount: Number(item.amount), paidBy: item.createdBy === session.user.id ? session.user.name : 'Casa' }))}
       initialSavings={savings}
       initialPayableBills={payableBills}
     />

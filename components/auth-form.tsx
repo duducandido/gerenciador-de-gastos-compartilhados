@@ -33,8 +33,8 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-[#f7f8fa] px-5 py-10 text-[#20252b]">
-      <section className="w-full max-w-md rounded-3xl border border-[#e5e9e7] bg-white p-7 shadow-[0_18px_50px_rgba(32,63,54,.08)] sm:p-9">
+    <main className="auth-screen flex min-h-svh items-center justify-center bg-[#f7f8fa] px-5 py-10 text-[#20252b]">
+      <section className="auth-card w-full max-w-md rounded-3xl border border-[#e5e9e7] bg-white p-7 shadow-[0_18px_50px_rgba(32,63,54,.08)] sm:p-9">
         <div className="mb-8 flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#203f36] text-[#c8f169]">₿</div><div><p className="text-lg font-bold tracking-tight">casal.</p><p className="text-[10px] font-medium uppercase tracking-[.19em] text-[#89918e]">finanças a dois</p></div></div>
         <h1 className="text-3xl font-bold tracking-[-.04em] text-[#203f36]">{isSignUp ? 'Criem sua conta' : 'Bem-vindos de volta'}</h1>
         <p className="mt-2 text-sm leading-relaxed text-[#7c8881]">{isSignUp ? 'Comecem a organizar a vida financeira juntos.' : 'Entre para continuar cuidando dos planos de vocês.'}</p>
