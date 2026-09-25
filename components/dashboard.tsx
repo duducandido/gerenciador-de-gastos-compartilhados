@@ -258,9 +258,9 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
 
   async function saveSettings() {
     try {
-      const saved = await updateHouseholdSettings({ profileName, householdName: groupNames })
-      setProfileName(saved.profileName)
-      setGroupNames(saved.householdName)
+const saved = await updateHouseholdSettings({ profileName, householdName: profileName })
+  setProfileName(saved.profileName)
+  setGroupNames(saved.profileName)
       setSettingsSaved(true)
       window.setTimeout(() => setSettingsSaved(false), 2200)
     } catch {
