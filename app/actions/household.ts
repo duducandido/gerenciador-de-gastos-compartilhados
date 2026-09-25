@@ -83,6 +83,13 @@ export async function createSavingsGoal(input: { name: string; targetAmount: num
   return created
 }
 
+export async function deleteSavingsGoal(id: number) {
+  const userId = await getUserId()
+  await db.delete(savingsGoal).where(and(eq(savingsGoal.id, id), eq(savingsGoal.userId, userId)))
+  revalidatePath('/')
+  return id
+}
+
 export async function contributeToSavingsGoal(id: number, amount: number) {
   const userId = await getUserId()
   if (amount <= 0) throw new Error('Valor inválido')
@@ -106,6 +113,13 @@ export async function createPayableBill(input: { person: string; title: string; 
   const [created] = await db.insert(payableBill).values({ userId, person, title, totalAmount: Math.round(input.totalAmount * 100), installmentAmount: Math.round(input.installmentAmount * 100), totalInstallments: Math.floor(input.totalInstallments), dueDay: Math.floor(input.dueDay) }).returning()
   revalidatePath('/')
   return created
+}
+
+export async function deletePayableBill(id: number) {
+  const userId = await getUserId()
+  await db.delete(payableBill).where(and(eq(payableBill.id, id), eq(payableBill.userId, userId)))
+  revalidatePath('/')
+  return id
 }
 
 export async function payNextInstallment(id: number) {

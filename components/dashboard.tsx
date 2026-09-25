@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
-import { createPayableBill, createSavingsGoal, payNextInstallment, contributeToSavingsGoal, updateAppearance, updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
+import { createPayableBill, createSavingsGoal, deletePayableBill, deleteSavingsGoal, payNextInstallment, contributeToSavingsGoal, updateAppearance, updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -30,6 +30,7 @@ import {
   Wallet,
   Users,
   X,
+  Trash2,
 } from 'lucide-react'
 
 const expenses: Array<{ title: string; category: string; date: string; amount: number; icon: typeof Wallet; color: string }> = []
@@ -338,7 +339,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.3fr_.7fr]">
             <section id="gastos" className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Últimos gastos</h2><p className="mt-1 text-xs text-[#8a938f]">Tudo o que foi registrado na conta</p></div><button onClick={() => goToTab('expenses')} className="text-xs font-bold text-[#789b40]">Ver todos</button></div>{expenseItems.length ? <div className="flex flex-col gap-2">{expenseItems.map((expense) => { const Icon = expense.icon; return <div key={expense.title} className="flex items-center justify-between rounded-xl px-2 py-3 transition hover:bg-[#f8faf7]"><div className="flex min-w-0 items-center gap-3"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${expense.color}`}><Icon size={18} /></div><div className="min-w-0"><p className="truncate text-sm font-semibold text-[#35433d]">{expense.title}</p><p className="mt-0.5 text-xs text-[#9aa29e]">{expense.category} · {expense.date}</p></div></div><p className="shrink-0 text-sm font-bold text-[#35433d]">{formatCurrency(expense.amount)}</p></div> })}</div> : <div className="rounded-xl border border-dashed border-[#dce4df] bg-[#f8faf7] px-4 py-8 text-center"><Wallet className="mx-auto text-[#9bc65b]" size={28} /><p className="mt-3 text-sm font-semibold text-[#35433d]">Nenhum gasto registrado</p><p className="mt-1 text-xs text-[#8a938f]">Adicione seu primeiro gasto para começar a acompanhar a conta.</p><button onClick={() => setShowExpense(true)} className="mt-4 rounded-lg bg-[var(--accent-user)] px-3 py-2 text-xs font-bold text-[#203f36]">Adicionar primeiro gasto</button></div>}</section>
-            <section id="metas" className="rounded-2xl border border-[#e5e9e7] bg-white p-4 sm:p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Metas do casal</h2><p className="mt-1 text-xs text-[#8a938f]">Construindo juntos</p></div><button onClick={() => { setActiveTab('goals'); setShowGoal(true) }} className="rounded-lg p-2 text-[#8a938f] hover:bg-[#f4f7f2]" aria-label="Adicionar meta"><Plus size={17} /></button></div>{savings.length ? <div className="space-y-5">{savings.map((goal) => <Goal key={goal.id} label={goal.name} value={formatCurrency(goal.savedAmount / 100)} total={formatCurrency(goal.targetAmount / 100)} progress={`${Math.min(100, Math.round((goal.savedAmount / Math.max(1, goal.targetAmount)) * 100))}%`} color="bg-[#9bc65b]" />)}</div> : <div className="py-8 text-center text-sm text-[#8a938f]">Nenhuma meta cadastrada ainda.</div>}</section>
+            <section id="metas" className="rounded-2xl border border-[#e5e9e7] bg-white p-4 sm:p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="text-lg font-bold text-[#203f36]">Metas do casal</h2><p className="mt-1 text-xs text-[#8a938f]">Construindo juntos</p></div><button onClick={() => { setActiveTab('goals'); setShowGoal(true) }} className="rounded-lg p-2 text-[#8a938f] hover:bg-[#f4f7f2]" aria-label="Adicionar meta"><Plus size={17} /></button></div>{savings.length ? <div className="space-y-5">{savings.map((goal) => <div key={goal.id} className="relative"><Goal label={goal.name} value={formatCurrency(goal.savedAmount / 100)} total={formatCurrency(goal.targetAmount / 100)} progress={`${Math.min(100, Math.round((goal.savedAmount / Math.max(1, goal.targetAmount)) * 100))}%`} color="bg-[#9bc65b]" /><button type="button" onClick={async () => { if (!window.confirm(`Excluir a meta ${goal.name}?`)) return; await deleteSavingsGoal(goal.id); setSavings((current) => current.filter((item) => item.id !== goal.id)) }} className="absolute right-0 top-0 rounded-lg p-2 text-[#8a938f] hover:bg-[#fff1ef] hover:text-red-600" aria-label={`Excluir meta ${goal.name}`}><Trash2 size={15} /></button></div>)}</div> : <div className="py-8 text-center text-sm text-[#8a938f]">Nenhuma meta cadastrada ainda.</div>}</section>
           </div>
         </section>}
 
