@@ -117,6 +117,8 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [billDueDay, setBillDueDay] = useState('5')
   const [billError, setBillError] = useState('')
   const [connectedBanks, setConnectedBanks] = useState<string[]>([])
+  const [bankConnectionLoading, setBankConnectionLoading] = useState(false)
+  const [bankConnectionError, setBankConnectionError] = useState('')
 
   const avatarInitials = profileName.split(' ').filter(Boolean).slice(0, 2).map((name) => name[0]).join('').toUpperCase() || 'EU'
   const timeGreeting = currentTime.getHours() < 12 ? 'Bom dia' : currentTime.getHours() < 18 ? 'Boa tarde' : 'Boa noite'
@@ -202,6 +204,60 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   ]
   const activeAlerts = alerts.filter((alert) => !dismissedAlerts.includes(alert.title))
   const availableBalance = Math.max(0, Number(monthlyLimit.replace(',', '.')) - total - reservedTotal - billsTotal)
+
+  async function connectBank() {
+    setBankConnectionLoading(true)
+    setBankConnectionError('')
+    try {
+      const response = await fetch('/api/connect-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUserId: `household-${initialHouseholdName}` }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.accessToken) throw new Error(data.error || 'Token inválido')
+
+      const pluggyWindow = window as Window & {
+        PluggyConnect?: new (options: {
+          connectToken: string
+          includeSandbox?: boolean
+          onSuccess?: (item: { id?: string; institution?: string }) => void
+          onError?: () => void
+          onClose?: () => void
+        }) => { init: () => void }
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        if (pluggyWindow.PluggyConnect) return resolve()
+        const script = document.createElement('script')
+        script.src = 'https://cdn.pluggy.ai/connect/v2/pluggy-connect.js'
+        script.async = true
+        script.onload = () => resolve()
+        script.onerror = () => reject(new Error('Não foi possível carregar o Pluggy Connect.'))
+        document.head.appendChild(script)
+      })
+
+      if (!pluggyWindow.PluggyConnect) throw new Error('Pluggy Connect não ficou disponível.')
+      const connect = new pluggyWindow.PluggyConnect({
+        connectToken: data.accessToken,
+        includeSandbox: true,
+        onSuccess: (item: { id?: string; institution?: string }) => {
+          const bankName = item.institution || 'Conta bancária'
+          setConnectedBanks((current) => current.includes(bankName) ? current : [...current, bankName])
+          setBankConnectionLoading(false)
+        },
+        onError: () => {
+          setBankConnectionError('A conexão foi cancelada ou recusada pelo banco.')
+          setBankConnectionLoading(false)
+        },
+        onClose: () => setBankConnectionLoading(false),
+      })
+      connect.init()
+    } catch (error) {
+      setBankConnectionError(error instanceof Error ? error.message : 'Não foi possível iniciar a conexão.')
+      setBankConnectionLoading(false)
+    }
+  }
 
   async function addContribution() {
     if (!contributionGoalId) return
@@ -398,7 +454,7 @@ const saved = await updateHouseholdSettings({ profileName, householdName: profil
         {activeTab === 'banks' && <section className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-5 sm:pb-12 sm:pt-8 lg:px-10 lg:pt-12">
           <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Open Finance</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Bancos conectados</h1><p className="mt-2 max-w-xl text-sm text-[#7c8881]">Conecte suas contas para importar automaticamente entradas e gastos para o casal.</p></div><span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#f1f8e5] px-3 py-2 text-xs font-bold text-[#557932]"><span className="size-2 rounded-full bg-[#9bc65b]" />Conexão segura</span></div>
           <div className="mb-6 rounded-2xl border border-[#dce8c8] bg-[#f1f8e5] p-5 sm:p-6"><div className="flex gap-4"><div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#719b37]"><Banknote size={22} /></div><div><h2 className="font-bold text-[#203f36]">Como funciona?</h2><p className="mt-1 text-sm leading-relaxed text-[#617266]">A conexão será feita por um provedor autorizado de Open Finance. Você não informa sua senha bancária no site, e poderá revogar o acesso quando quiser.</p><p className="mt-3 text-xs font-semibold text-[#557932]">Provedor preparado: Pluggy</p></div></div></div>
-          <div className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between gap-4"><div><h2 className="text-lg font-bold text-[#203f36]">Escolha seu banco</h2><p className="mt-1 text-xs text-[#8a938f]">A conexão real será ativada quando as credenciais do Pluggy forem configuradas.</p></div><span className="rounded-full bg-[#f5f7f5] px-3 py-1 text-xs font-semibold text-[#7c8881]">{connectedBanks.length} conectado{connectedBanks.length === 1 ? '' : 's'}</span></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{['Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander', 'Inter'].map((bank) => { const connected = connectedBanks.includes(bank); return <div key={bank} className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e9e7] p-4"><div className="flex min-w-0 items-center gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f8e5] text-sm font-bold text-[#557932]">{bank.slice(0, 2).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-bold text-[#35433d]">{bank}</p><p className="text-xs text-[#9aa29e]">{connected ? 'Aguardando sincronização' : 'Conta corrente'}</p></div></div><button type="button" onClick={() => setConnectedBanks((current) => connected ? current.filter((item) => item !== bank) : [...current, bank])} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-bold ${connected ? 'bg-[#f5f7f5] text-[#7c8881]' : 'bg-[var(--accent-user)] text-[#203f36]'}`}>{connected ? 'Remover' : 'Conectar'}</button></div> })}</div>{connectedBanks.length > 0 && <div className="mt-5 rounded-xl border border-dashed border-[#dce4df] bg-[#f8faf7] p-4 text-sm text-[#617266]"><strong className="text-[#35433d]">Próximo passo:</strong> configurar as credenciais do Pluggy para iniciar a sincronização automática das movimentações.</div>}</div>
+          <div className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between gap-4"><div><h2 className="text-lg font-bold text-[#203f36]">Escolha seu banco</h2><p className="mt-1 text-xs text-[#8a938f]">Escolha um banco no Pluggy para conectar sua conta com segurança.</p></div><span className="rounded-full bg-[#f5f7f5] px-3 py-1 text-xs font-semibold text-[#7c8881]">{connectedBanks.length} conectado{connectedBanks.length === 1 ? '' : 's'}</span></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{['Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander', 'Inter'].map((bank) => { const connected = connectedBanks.includes(bank); return <div key={bank} className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e9e7] p-4"><div className="flex min-w-0 items-center gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f8e5] text-sm font-bold text-[#557932]">{bank.slice(0, 2).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-bold text-[#35433d]">{bank}</p><p className="text-xs text-[#9aa29e]">{connected ? 'Aguardando sincronização' : 'Conta corrente'}</p></div></div><button type="button" onClick={() => connected ? setConnectedBanks((current) => current.filter((item) => item !== bank)) : connectBank()} disabled={bankConnectionLoading} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-bold disabled:cursor-wait disabled:opacity-60 ${connected ? 'bg-[#f5f7f5] text-[#7c8881]' : 'bg-[var(--accent-user)] text-[#203f36]'}`}>{connected ? 'Remover' : bankConnectionLoading ? 'Abrindo...' : 'Conectar'}</button></div> })}</div>{bankConnectionError && <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{bankConnectionError}</div>}{connectedBanks.length > 0 && <div className="mt-5 rounded-xl border border-dashed border-[#dce4df] bg-[#f8faf7] p-4 text-sm text-[#617266]"><strong className="text-[#35433d]">Conexão iniciada:</strong> o Pluggy está autorizando sua conta. As movimentações aparecerão após a sincronização.</div>}</div>
         </section>}
 
         {activeTab === 'expenses' && <section className="min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-5 sm:pb-12 sm:pt-8 lg:px-10 lg:pt-12">
