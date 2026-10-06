@@ -5,6 +5,7 @@ import type { ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 import { createExpense, createPayableBill, createSavingsGoal, deleteExpense, deletePayableBill, deleteSavingsGoal, payNextInstallment, contributeToSavingsGoal, updateAppearance, updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
+import { savePluggyItem } from '@/app/actions/pluggy'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -49,9 +50,10 @@ type DashboardProps = {
   initialExpenses: Array<{ id: string; title: string; category: string; date: string; amount: number; paidBy: string }>
   initialSavings: Array<{ id: number; name: string; targetAmount: number; installmentAmount: number; savedAmount: number; dueDay: number }>
   initialPayableBills: Array<{ id: number; person: string; title: string; totalAmount: number; installmentAmount: number; totalInstallments: number; paidInstallments: number; dueDay: number; status: string }>
+  initialConnectedBanks: string[]
 }
 
-export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills }: DashboardProps) {
+export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills, initialConnectedBanks }: DashboardProps) {
   const accountCreatedAt = new Date(initialAccountCreatedAt)
   const currentDate = new Date()
   const monthsSinceAccountCreation = (currentDate.getFullYear() - accountCreatedAt.getFullYear()) * 12 + currentDate.getMonth() - accountCreatedAt.getMonth()
@@ -116,7 +118,10 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [billCount, setBillCount] = useState('1')
   const [billDueDay, setBillDueDay] = useState('5')
   const [billError, setBillError] = useState('')
-  const [connectedBanks, setConnectedBanks] = useState<string[]>([])
+  const [connectedBanks, setConnectedBanks] = useState<string[]>(initialConnectedBanks)
+  const bankOptions = useMemo(() => Array.from(new Set([...connectedBanks, 'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander', 'Inter'])), [connectedBanks])
+  const [bankConnectionLoading, setBankConnectionLoading] = useState(false)
+  const [bankConnectionError, setBankConnectionError] = useState('')
 
   const avatarInitials = profileName.split(' ').filter(Boolean).slice(0, 2).map((name) => name[0]).join('').toUpperCase() || 'EU'
   const timeGreeting = currentTime.getHours() < 12 ? 'Bom dia' : currentTime.getHours() < 18 ? 'Boa tarde' : 'Boa noite'
@@ -202,6 +207,66 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   ]
   const activeAlerts = alerts.filter((alert) => !dismissedAlerts.includes(alert.title))
   const availableBalance = Math.max(0, Number(monthlyLimit.replace(',', '.')) - total - reservedTotal - billsTotal)
+
+  async function connectBank() {
+    setBankConnectionLoading(true)
+    setBankConnectionError('')
+    try {
+      const response = await fetch('/api/connect-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUserId: `household-${initialHouseholdName}` }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.accessToken) throw new Error(data.error || 'Token inválido')
+
+      const pluggyWindow = window as Window & {
+        PluggyConnect?: new (options: {
+          connectToken: string
+          includeSandbox?: boolean
+          onSuccess?: (item: { id?: string; institution?: string }) => void
+          onError?: () => void
+          onClose?: () => void
+        }) => { init: () => void }
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        if (pluggyWindow.PluggyConnect) return resolve()
+        const script = document.createElement('script')
+        script.src = 'https://cdn.pluggy.ai/connect/v2/pluggy-connect.js'
+        script.async = true
+        script.onload = () => resolve()
+        script.onerror = () => reject(new Error('Não foi possível carregar o Pluggy Connect.'))
+        document.head.appendChild(script)
+      })
+
+      if (!pluggyWindow.PluggyConnect) throw new Error('Pluggy Connect não ficou disponível.')
+      const connect = new pluggyWindow.PluggyConnect({
+        connectToken: data.accessToken,
+        includeSandbox: true,
+        onSuccess: (item: { id?: string; institution?: string | { name?: string }; item?: { institution?: { name?: string } } }) => {
+          const institution = typeof item.institution === 'string'
+            ? item.institution
+            : item.institution?.name || item.item?.institution?.name || 'Conta bancária'
+          if (!item.id) throw new Error('A Pluggy não retornou o identificador da conexão.')
+          void savePluggyItem({ itemId: item.id, institution }).then(async () => {
+            const syncResponse = await fetch('/api/pluggy/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: item.id }) })
+            if (!syncResponse.ok) throw new Error('A conexão foi criada, mas a sincronização falhou.')
+            setConnectedBanks((current) => current.includes(institution) ? current : [...current, institution])
+          }).catch((error) => setBankConnectionError(error instanceof Error ? error.message : 'Não foi possível salvar a conexão.')).finally(() => setBankConnectionLoading(false))
+        },
+        onError: () => {
+          setBankConnectionError('A conexão foi cancelada ou recusada pelo banco.')
+          setBankConnectionLoading(false)
+        },
+        onClose: () => setBankConnectionLoading(false),
+      })
+      connect.init()
+    } catch (error) {
+      setBankConnectionError(error instanceof Error ? error.message : 'Não foi possível iniciar a conexão.')
+      setBankConnectionLoading(false)
+    }
+  }
 
   async function addContribution() {
     if (!contributionGoalId) return
@@ -398,7 +463,7 @@ const saved = await updateHouseholdSettings({ profileName, householdName: profil
         {activeTab === 'banks' && <section className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-5 sm:pb-12 sm:pt-8 lg:px-10 lg:pt-12">
           <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-sm font-medium text-[#8a938f]">Open Finance</p><h1 className="text-3xl font-bold tracking-[-0.04em] text-[#203f36] sm:text-[38px]">Bancos conectados</h1><p className="mt-2 max-w-xl text-sm text-[#7c8881]">Conecte suas contas para importar automaticamente entradas e gastos para o casal.</p></div><span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#f1f8e5] px-3 py-2 text-xs font-bold text-[#557932]"><span className="size-2 rounded-full bg-[#9bc65b]" />Conexão segura</span></div>
           <div className="mb-6 rounded-2xl border border-[#dce8c8] bg-[#f1f8e5] p-5 sm:p-6"><div className="flex gap-4"><div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#719b37]"><Banknote size={22} /></div><div><h2 className="font-bold text-[#203f36]">Como funciona?</h2><p className="mt-1 text-sm leading-relaxed text-[#617266]">A conexão será feita por um provedor autorizado de Open Finance. Você não informa sua senha bancária no site, e poderá revogar o acesso quando quiser.</p><p className="mt-3 text-xs font-semibold text-[#557932]">Provedor preparado: Pluggy</p></div></div></div>
-          <div className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between gap-4"><div><h2 className="text-lg font-bold text-[#203f36]">Escolha seu banco</h2><p className="mt-1 text-xs text-[#8a938f]">A conexão real será ativada quando as credenciais do Pluggy forem configuradas.</p></div><span className="rounded-full bg-[#f5f7f5] px-3 py-1 text-xs font-semibold text-[#7c8881]">{connectedBanks.length} conectado{connectedBanks.length === 1 ? '' : 's'}</span></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{['Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander', 'Inter'].map((bank) => { const connected = connectedBanks.includes(bank); return <div key={bank} className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e9e7] p-4"><div className="flex min-w-0 items-center gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f8e5] text-sm font-bold text-[#557932]">{bank.slice(0, 2).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-bold text-[#35433d]">{bank}</p><p className="text-xs text-[#9aa29e]">{connected ? 'Aguardando sincronização' : 'Conta corrente'}</p></div></div><button type="button" onClick={() => setConnectedBanks((current) => connected ? current.filter((item) => item !== bank) : [...current, bank])} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-bold ${connected ? 'bg-[#f5f7f5] text-[#7c8881]' : 'bg-[var(--accent-user)] text-[#203f36]'}`}>{connected ? 'Remover' : 'Conectar'}</button></div> })}</div>{connectedBanks.length > 0 && <div className="mt-5 rounded-xl border border-dashed border-[#dce4df] bg-[#f8faf7] p-4 text-sm text-[#617266]"><strong className="text-[#35433d]">Próximo passo:</strong> configurar as credenciais do Pluggy para iniciar a sincronização automática das movimentações.</div>}</div>
+          <div className="rounded-2xl border border-[#e5e9e7] bg-white p-5 sm:p-6"><div className="mb-6 flex items-center justify-between gap-4"><div><h2 className="text-lg font-bold text-[#203f36]">Escolha seu banco</h2><p className="mt-1 text-xs text-[#8a938f]">Escolha um banco no Pluggy para conectar sua conta com segurança.</p></div><span className="rounded-full bg-[#f5f7f5] px-3 py-1 text-xs font-semibold text-[#7c8881]">{connectedBanks.length} conectado{connectedBanks.length === 1 ? '' : 's'}</span></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{bankOptions.map((bank) => { const connected = connectedBanks.includes(bank); return <div key={bank} className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e9e7] p-4"><div className="flex min-w-0 items-center gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f8e5] text-sm font-bold text-[#557932]">{bank.slice(0, 2).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-bold text-[#35433d]">{bank}</p><p className="text-xs text-[#9aa29e]">{connected ? 'Aguardando sincronização' : 'Conta corrente'}</p></div></div><button type="button" onClick={() => connected ? setConnectedBanks((current) => current.filter((item) => item !== bank)) : connectBank()} disabled={bankConnectionLoading} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-bold disabled:cursor-wait disabled:opacity-60 ${connected ? 'bg-[#f5f7f5] text-[#7c8881]' : 'bg-[var(--accent-user)] text-[#203f36]'}`}>{connected ? 'Remover' : bankConnectionLoading ? 'Abrindo...' : 'Conectar'}</button></div> })}</div>{bankConnectionError && <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{bankConnectionError}</div>}{connectedBanks.length > 0 && <div className="mt-5 rounded-xl border border-dashed border-[#dce4df] bg-[#f8faf7] p-4 text-sm text-[#617266]"><strong className="text-[#35433d]">Conexão iniciada:</strong> o Pluggy está autorizando sua conta. As movimentações aparecerão após a sincronização.</div>}</div>
         </section>}
 
         {activeTab === 'expenses' && <section className="min-w-0 flex-1 px-4 pb-10 pt-6 sm:px-5 sm:pb-12 sm:pt-8 lg:px-10 lg:pt-12">
@@ -437,6 +502,8 @@ const saved = await updateHouseholdSettings({ profileName, householdName: profil
       {showExpense && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowExpense(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f3d6] text-[#668c35]"><Plus size={22} /></div><h2 className="text-2xl font-bold tracking-tight text-[#203f36]">Adicionar gasto</h2><p className="mt-2 text-sm text-[#7c8881]">Registre uma despesa para a conta compartilhada.</p><div className="mt-6 space-y-4"><label className="block text-sm font-semibold text-[#35433d]">Descrição<input value={expenseTitle} onChange={(event) => setExpenseTitle(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="Ex.: Mercado do mês" /></label><label className="block text-sm font-semibold text-[#35433d]">Valor<input value={expenseAmount} onChange={(event) => setExpenseAmount(event.target.value)} type="number" min="0.01" step="0.01" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3 outline-none focus:border-[#9bc65b]" placeholder="0,00" /></label><label className="block text-sm font-semibold text-[#35433d]">Categoria<select value={expenseCategory} onChange={(event) => setExpenseCategory(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] bg-white px-4 py-3 outline-none focus:border-[#9bc65b]"><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Lazer</option>{customCategories.map((category) => <option key={category}>{category}</option>)}</select></label><div className="flex gap-2"><input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); addCustomCategory() } }} className="min-w-0 flex-1 rounded-xl border border-[#dce4df] px-3 py-2 text-xs" placeholder="Criar categoria personalizada" /><button type="button" onClick={addCustomCategory} className="rounded-xl border border-[#cbdac4] px-3 text-xs font-bold text-[#557932]">Adicionar</button></div><div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm font-semibold text-[#35433d]">Quem pagou<select value={expensePaidBy} onChange={(event) => setExpensePaidBy(event.target.value)} className="mt-2 w-full rounded-xl border border-[#dce4df] bg-white px-4 py-3"><option>Eu</option><option>Outra pessoa</option><option>Dividido</option></select></label><label className="block text-sm font-semibold text-[#35433d]">Dividir entre<input value={expensePeople} onChange={(event) => setExpensePeople(event.target.value)} type="number" min="1" max="20" className="mt-2 w-full rounded-xl border border-[#dce4df] px-4 py-3" /></label></div>{expenseAmount && Number(expensePeople) > 1 && <p className="rounded-xl bg-[#f1f8e6] px-3 py-2 text-xs font-semibold text-[#557932]">Cada pessoa fica responsável por {formatCurrency(Number(expenseAmount.replace(',', '.')) / Number(expensePeople))}</p>}</div><button onClick={addExpense} className="mt-6 w-full rounded-xl bg-[#203f36] py-3.5 text-sm font-bold text-white transition hover:bg-[#2d5549]">Salvar gasto</button></div></div>}
 
       {showInvite && <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#17241f]/35 p-5 backdrop-blur-sm"><div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl"><button onClick={() => setShowInvite(false)} className="absolute right-5 top-5 rounded-lg p-2 text-[#8a938f] hover:bg-[#f2f5f2]" aria-label="Fechar"><X size={18} /></button><div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f3d6] text-[#668c35]"><Share2 size={22} /></div><h2 className="text-2xl font-bold tracking-tight text-[#203f36]">Convide alguém para a conta</h2><p className="mt-2 text-sm leading-relaxed text-[#7c8881]">Compartilhe este link com sua namorada ou com quem participa dos gastos. Só entra quem tiver o convite.</p><div className="mt-6 rounded-2xl border border-dashed border-[#bdd397] bg-[#f5faed] p-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#789b40]">Link de convite</p><p className="break-all text-sm font-bold text-[#375033]">https://{inviteLink}</p></div><button onClick={copyInvite} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#203f36] py-3.5 text-sm font-bold text-white transition hover:bg-[#2d5549]"><Copy size={16} /> {copied ? 'Link copiado' : 'Copiar link'}</button><p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-[#98a19c]"><CircleHelp size={13} /> O convite expira em 7 dias</p></div></div>}
+
+      <footer className="mt-auto border-t border-[#e5e9e7] bg-[#f8faf7] px-6 py-8 text-center sm:px-10 lg:text-left"><div className="mx-auto flex max-w-7xl flex-col gap-2 text-xs text-[#8a938f] sm:flex-row sm:items-end sm:justify-between"><div><p className="font-semibold text-[#65736b]">Suporte</p><a href="mailto:candidosistemass@gmail.com" className="mt-1 inline-block transition hover:text-[#557932]">candidosistemass@gmail.com</a></div><p className="text-[#9aa29e]">© 2026 Cândido</p></div></footer>
     </main>
   )
 }
