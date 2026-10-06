@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { getMyHousehold, getExpenses, getSavingsGoals, getPayableBills } from '@/app/actions/household'
+import { getPluggyItems } from '@/app/actions/pluggy'
 import Dashboard from '@/components/dashboard'
 import { HouseholdSetup } from '@/components/household-setup'
 
@@ -10,7 +11,7 @@ export default async function HomePage() {
   if (!session?.user) redirect('/sign-in')
   const membership = await getMyHousehold()
   if (!membership) return <HouseholdSetup name={session.user.name} />
-  const [expenses, savings, payableBills] = await Promise.all([getExpenses(), getSavingsGoals(), getPayableBills()])
+  const [expenses, savings, payableBills, pluggyItems] = await Promise.all([getExpenses(), getSavingsGoals(), getPayableBills(), getPluggyItems()])
   return (
     <Dashboard
       initialProfileName={session.user.name}
@@ -22,6 +23,7 @@ export default async function HomePage() {
       initialExpenses={expenses.map((item) => ({ id: item.id, title: item.title, category: item.category, date: item.spentAt.toISOString(), amount: Number(item.amount), paidBy: item.createdBy === session.user.id ? session.user.name : 'Casa' }))}
       initialSavings={savings}
       initialPayableBills={payableBills}
+      initialConnectedBanks={pluggyItems.map((item) => item.institution)}
     />
   )
 }

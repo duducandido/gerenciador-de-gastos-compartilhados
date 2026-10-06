@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric, unique, serial, integer } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, unique, serial, integer, jsonb } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -179,6 +179,31 @@ export const expenseAttachment = pgTable('expense_attachment', {
   size: integer('size').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+export const pluggyItem = pgTable('pluggy_items', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  itemId: text('itemId').notNull(),
+  institution: text('institution').notNull(),
+  status: text('status').notNull().default('UPDATED'),
+  lastUpdatedAt: timestamp('lastUpdatedAt').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({ itemUserUnique: unique().on(table.userId, table.itemId) }))
+
+export const pluggyTransaction = pgTable('pluggy_transactions', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  itemId: text('itemId').notNull(),
+  accountId: text('accountId'),
+  description: text('description').notNull(),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  date: timestamp('date').notNull(),
+  category: text('category'),
+  type: text('type'),
+  raw: jsonb('raw'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({ transactionUserUnique: unique().on(table.userId, table.id) }))
 
 export const goal = pgTable('goal', {
   id: text('id').primaryKey(),

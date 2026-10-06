@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { PluggyClient } from 'pluggy-sdk'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
-    const { clientUserId } = await request.json().catch(() => ({}))
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     const clientId = process.env.PLUGGY_CLIENT_ID
     const clientSecret = process.env.PLUGGY_CLIENT_SECRET
 
@@ -12,9 +15,7 @@ export async function POST(request: Request) {
     }
 
     const pluggy = new PluggyClient({ clientId, clientSecret })
-    const connectToken = await pluggy.createConnectToken({
-      clientUserId: typeof clientUserId === 'string' ? clientUserId.slice(0, 120) : undefined,
-    })
+    const connectToken = await pluggy.createConnectToken(session.user.id)
 
     return NextResponse.json({ accessToken: connectToken.accessToken })
   } catch (error) {

@@ -5,6 +5,7 @@ import type { ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 import { createExpense, createPayableBill, createSavingsGoal, deleteExpense, deletePayableBill, deleteSavingsGoal, payNextInstallment, contributeToSavingsGoal, updateAppearance, updateHouseholdSettings, updateProfileAvatar } from '@/app/actions/household'
+import { savePluggyItem } from '@/app/actions/pluggy'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -49,9 +50,10 @@ type DashboardProps = {
   initialExpenses: Array<{ id: string; title: string; category: string; date: string; amount: number; paidBy: string }>
   initialSavings: Array<{ id: number; name: string; targetAmount: number; installmentAmount: number; savedAmount: number; dueDay: number }>
   initialPayableBills: Array<{ id: number; person: string; title: string; totalAmount: number; installmentAmount: number; totalInstallments: number; paidInstallments: number; dueDay: number; status: string }>
+  initialConnectedBanks: string[]
 }
 
-export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills }: DashboardProps) {
+export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills, initialConnectedBanks }: DashboardProps) {
   const accountCreatedAt = new Date(initialAccountCreatedAt)
   const currentDate = new Date()
   const monthsSinceAccountCreation = (currentDate.getFullYear() - accountCreatedAt.getFullYear()) * 12 + currentDate.getMonth() - accountCreatedAt.getMonth()
@@ -116,7 +118,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [billCount, setBillCount] = useState('1')
   const [billDueDay, setBillDueDay] = useState('5')
   const [billError, setBillError] = useState('')
-  const [connectedBanks, setConnectedBanks] = useState<string[]>([])
+  const [connectedBanks, setConnectedBanks] = useState<string[]>(initialConnectedBanks)
   const bankOptions = useMemo(() => Array.from(new Set([...connectedBanks, 'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander', 'Inter'])), [connectedBanks])
   const [bankConnectionLoading, setBankConnectionLoading] = useState(false)
   const [bankConnectionError, setBankConnectionError] = useState('')
@@ -246,8 +248,12 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
           const institution = typeof item.institution === 'string'
             ? item.institution
             : item.institution?.name || item.item?.institution?.name || 'Conta bancária'
-          setConnectedBanks((current) => current.includes(institution) ? current : [...current, institution])
-          setBankConnectionLoading(false)
+          if (!item.id) throw new Error('A Pluggy não retornou o identificador da conexão.')
+          void savePluggyItem({ itemId: item.id, institution }).then(async () => {
+            const syncResponse = await fetch('/api/pluggy/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: item.id }) })
+            if (!syncResponse.ok) throw new Error('A conexão foi criada, mas a sincronização falhou.')
+            setConnectedBanks((current) => current.includes(institution) ? current : [...current, institution])
+          }).catch((error) => setBankConnectionError(error instanceof Error ? error.message : 'Não foi possível salvar a conexão.')).finally(() => setBankConnectionLoading(false))
         },
         onError: () => {
           setBankConnectionError('A conexão foi cancelada ou recusada pelo banco.')
