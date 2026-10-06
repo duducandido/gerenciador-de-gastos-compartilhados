@@ -14,6 +14,20 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
+  user: {
+    additionalFields: {
+      accentColor: {
+        type: 'string',
+        required: false,
+        defaultValue: '#c8f169',
+      },
+      theme: {
+        type: 'string',
+        required: false,
+        defaultValue: 'light',
+      },
+    },
+  },
   trustedOrigins: [
     ...(process.env.NODE_ENV === 'development'
       ? [
