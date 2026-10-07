@@ -15,7 +15,12 @@ export async function POST(request: Request) {
     }
 
     const pluggy = new PluggyClient({ clientId, clientSecret })
-    const connectToken = await pluggy.createConnectToken(session.user.id)
+    const appUrl = process.env.BETTER_AUTH_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined)
+    const connectToken = await pluggy.createConnectToken(undefined, {
+      clientUserId: session.user.id,
+      avoidDuplicates: true,
+      ...(appUrl ? { webhookUrl: `${appUrl}/api/webhooks/pluggy` } : {}),
+    })
 
     return NextResponse.json({ accessToken: connectToken.accessToken })
   } catch (error) {
