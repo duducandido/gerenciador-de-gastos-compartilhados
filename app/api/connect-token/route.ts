@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     const pluggy = new PluggyClient({ clientId, clientSecret })
     const appUrl = process.env.BETTER_AUTH_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined)
-    const connectToken = await pluggy.createConnectToken(undefined, {
+    const connectToken = await pluggy.createConnectToken(null as unknown as undefined, {
       clientUserId: session.user.id,
       avoidDuplicates: true,
       ...(appUrl ? { webhookUrl: `${appUrl}/api/webhooks/pluggy` } : {}),
@@ -24,7 +24,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ accessToken: connectToken.accessToken })
   } catch (error) {
-    console.error('[v0] Falha ao criar token Pluggy:', error)
-    return NextResponse.json({ error: 'Não foi possível iniciar a conexão bancária.' }, { status: 502 })
+    const details = error instanceof Error ? error.message : 'Erro desconhecido'
+    const responseBody = typeof error === 'object' && error !== null && 'response' in error
+      ? String((error as { response?: { body?: unknown } }).response?.body ?? '')
+      : ''
+    console.error('[v0] Falha ao criar token Pluggy:', details, responseBody)
+    return NextResponse.json({ error: 'Não foi possível iniciar a conexão bancária.', details: process.env.NODE_ENV === 'development' ? responseBody || details : undefined }, { status: 502 })
   }
 }
