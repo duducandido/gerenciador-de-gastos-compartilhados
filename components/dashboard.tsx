@@ -62,7 +62,8 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [showInvite, setShowInvite] = useState(false)
   const [showExpense, setShowExpense] = useState(false)
   const [mobileMenu, setMobileMenu] = useState(false)
-  const [currentTime, setCurrentTime] = useState(() => new Date())
+  const [currentTime, setCurrentTime] = useState(() => new Date(0))
+  const [isMounted, setIsMounted] = useState(false)
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [expenseTitle, setExpenseTitle] = useState('')
@@ -125,10 +126,12 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [bankConnectionError, setBankConnectionError] = useState('')
 
   const avatarInitials = profileName.split(' ').filter(Boolean).slice(0, 2).map((name) => name[0]).join('').toUpperCase() || 'EU'
-  const timeGreeting = currentTime.getHours() < 12 ? 'Bom dia' : currentTime.getHours() < 18 ? 'Boa tarde' : 'Boa noite'
-  const formattedTime = currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-
+  const timeGreeting = !isMounted ? 'Olá' : currentTime.getHours() < 12 ? 'Bom dia' : currentTime.getHours() < 18 ? 'Boa tarde' : 'Boa noite'
+  const formattedTime = !isMounted ? '--:--' : currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  
   useEffect(() => {
+    setIsMounted(true)
+    setCurrentTime(new Date())
     const timer = window.setInterval(() => setCurrentTime(new Date()), 60000)
     return () => window.clearInterval(timer)
   }, [])
