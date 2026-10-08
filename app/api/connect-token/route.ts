@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const pluggy = new PluggyClient({ clientId, clientSecret })
-    const connectToken = await pluggy.createConnectToken(null as unknown as undefined, {
+    const connectToken = await pluggy.createConnectToken(undefined, {
       clientUserId: session.user.id,
       avoidDuplicates: true,
     })
@@ -24,9 +24,12 @@ export async function POST(request: Request) {
   } catch (error) {
     const details = error instanceof Error ? error.message : 'Erro desconhecido'
     const responseBody = typeof error === 'object' && error !== null && 'response' in error
-      ? String((error as { response?: { body?: unknown } }).response?.body ?? '')
+      ? (error as { response?: { body?: { message?: string } } }).response?.body?.message ?? ''
       : ''
     console.error('[v0] Falha ao criar token Pluggy:', details, responseBody)
-    return NextResponse.json({ error: 'Não foi possível iniciar a conexão bancária.', details: responseBody || details }, { status: 502 })
+    const errorMessage = responseBody === 'clientId must be a UUID'
+      ? 'O PLUGGY_CLIENT_ID configurado não é válido. Use o Client ID UUID da mesma conta e ambiente da Pluggy.'
+      : responseBody || details
+    return NextResponse.json({ error: errorMessage }, { status: 502 })
   }
 }
