@@ -87,7 +87,7 @@ export async function getExpenses() {
   return db.select().from(expense).where(eq(expense.householdId, membership[0].householdId)).orderBy(expense.spentAt)
 }
 
-export async function createExpense(input: { title: string; category: string; amount: number; paidBy: string }) {
+export async function createExpense(input: { title: string; category: string; amount: number; paidBy: string; spentAt?: string }) {
   const userId = await getUserId()
   const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
   if (!membership[0]) throw new Error('Conta compartilhada não encontrada')
@@ -95,7 +95,9 @@ export async function createExpense(input: { title: string; category: string; am
   const category = input.category.trim().slice(0, 40)
   const amount = Number(input.amount)
   if (!title || !category || !Number.isFinite(amount) || amount <= 0 || amount > 100000000) throw new Error('Confira os dados do gasto')
-  const [created] = await db.insert(expense).values({ id: randomUUID(), householdId: membership[0].householdId, title, category, amount: amount.toFixed(2), createdBy: userId }).returning()
+  const spentAt = input.spentAt ? new Date(`${input.spentAt}T12:00:00`) : new Date()
+  if (Number.isNaN(spentAt.getTime())) throw new Error('Informe uma data válida')
+  const [created] = await db.insert(expense).values({ id: randomUUID(), householdId: membership[0].householdId, title, category, amount: amount.toFixed(2), createdBy: userId, spentAt }).returning()
   await logActivity(userId, membership[0].householdId, 'created', 'expense', created.id, `Criou o gasto ${title}`)
   revalidatePath('/')
   return { ...created, amount: Number(created.amount), paidBy: input.paidBy }
