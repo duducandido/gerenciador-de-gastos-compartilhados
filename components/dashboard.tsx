@@ -220,7 +220,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
         body: JSON.stringify({ clientUserId: `household-${initialHouseholdName}` }),
       })
       const data = await response.json()
-      if (!response.ok || !data.accessToken) throw new Error(data.error || 'Token inválido')
+      if (!response.ok || !data.accessToken) throw new Error(data.details || data.error || 'Token inválido')
 
       const pluggyWindow = window as Window & {
         PluggyConnect?: new (options: {
