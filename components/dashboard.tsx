@@ -43,6 +43,7 @@ const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style:
 type DashboardProps = {
   initialProfileName: string
   initialHouseholdName: string
+  initialAccountType: 'single' | 'couple' | 'family'
   initialAvatarImage: string | null
   initialAccentColor: string
   initialTheme: 'light' | 'dark'
@@ -53,7 +54,7 @@ type DashboardProps = {
   initialConnectedBanks: string[]
 }
 
-export default function Page({ initialProfileName, initialHouseholdName, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills, initialConnectedBanks }: DashboardProps) {
+export default function Page({ initialProfileName, initialHouseholdName, initialAccountType, initialAvatarImage, initialAccentColor, initialTheme, initialAccountCreatedAt, initialExpenses, initialSavings, initialPayableBills, initialConnectedBanks }: DashboardProps) {
   const accountCreatedAt = new Date(initialAccountCreatedAt)
   const currentDate = new Date()
   const monthsSinceAccountCreation = (currentDate.getFullYear() - accountCreatedAt.getFullYear()) * 12 + currentDate.getMonth() - accountCreatedAt.getMonth()
@@ -73,7 +74,7 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
   const [expensePeople, setExpensePeople] = useState('2')
   const [expensePaidBy, setExpensePaidBy] = useState('Eu')
   const [profileName, setProfileName] = useState(initialProfileName)
-  const [accountType, setAccountType] = useState<'single' | 'couple' | 'family'>('couple')
+  const [accountType, setAccountType] = useState<'single' | 'couple' | 'family'>(initialAccountType)
   const [groupNames, setGroupNames] = useState(initialHouseholdName)
   const [monthlyLimit, setMonthlyLimit] = useState('')
   const [settingsSaved, setSettingsSaved] = useState(false)
@@ -330,9 +331,9 @@ export default function Page({ initialProfileName, initialHouseholdName, initial
 
   async function saveSettings() {
     try {
-const saved = await updateHouseholdSettings({ profileName, householdName: profileName })
+const saved = await updateHouseholdSettings({ profileName, householdName: groupNames, accountType })
   setProfileName(saved.profileName)
-  setGroupNames(saved.profileName)
+  setGroupNames(saved.householdName)
       setSettingsSaved(true)
       window.setTimeout(() => setSettingsSaved(false), 2200)
     } catch {
