@@ -410,7 +410,7 @@ const saved = await updateHouseholdSettings({ profileName, householdName: groupN
 
   return (
     <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]">
-      <header className="sticky top-0 z-20 border-b border-[#e6e9ed] bg-[#f7f8fa] shadow-[0_1px_0_rgba(230,233,237,.8)]">
+      <header className="sticky top-0 z-40 border-b border-[#e6e9ed] bg-[#f7f8fa] shadow-[0_1px_0_rgba(230,233,237,.8)]">
         <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between px-4 sm:h-20 sm:px-5 lg:px-10">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileMenu(!mobileMenu)} className="rounded-lg p-2 lg:hidden" aria-label="Abrir menu"><Menu size={21} /></button>
