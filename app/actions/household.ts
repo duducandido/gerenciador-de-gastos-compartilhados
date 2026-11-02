@@ -38,19 +38,20 @@ export async function getMyHousehold() {
   return rows[0] ?? null
 }
 
-export async function updateHouseholdSettings(input: { profileName: string; householdName: string }) {
+export async function updateHouseholdSettings(input: { profileName: string; householdName: string; accountType: 'single' | 'couple' | 'family' }) {
   const userId = await getUserId()
   const profileName = input.profileName.trim().slice(0, 80)
   const householdName = input.householdName.trim().slice(0, 80)
+  const accountType = input.accountType
   if (!profileName || !householdName) throw new Error('Preencha os nomes antes de salvar')
 
   const membership = await db.select({ householdId: householdMember.householdId }).from(householdMember).where(eq(householdMember.userId, userId)).limit(1)
   if (!membership[0]) throw new Error('Conta compartilhada não encontrada')
 
   await db.update(user).set({ name: profileName, updatedAt: new Date() }).where(eq(user.id, userId))
-  await db.update(household).set({ name: householdName }).where(eq(household.id, membership[0].householdId))
+  await db.update(household).set({ name: householdName, accountType }).where(eq(household.id, membership[0].householdId))
   revalidatePath('/')
-  return { profileName, householdName }
+  return { profileName, householdName, accountType }
 }
 
 export async function updateAppearance(input: { accentColor: string; theme: 'light' | 'dark' }) {

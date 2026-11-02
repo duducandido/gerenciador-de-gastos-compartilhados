@@ -83,6 +83,7 @@ export const verification = pgTable('verification', {
 export const household = pgTable('household', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  accountType: text('accountType').notNull().default('couple'),
   inviteCode: text('inviteCode').notNull().unique(),
   createdBy: text('createdBy').notNull(),
   createdAt: timestamp('createdAt').notNull().defaultNow(),

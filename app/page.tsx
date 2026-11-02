@@ -16,6 +16,7 @@ export default async function HomePage() {
     <Dashboard
       initialProfileName={session.user.name}
       initialHouseholdName={membership.household.name}
+      initialAccountType={membership.household.accountType === 'single' || membership.household.accountType === 'family' ? membership.household.accountType : 'couple'}
   initialAvatarImage={session.user.image ?? null}
   initialAccentColor={session.user.accentColor ?? '#c8f169'}
   initialTheme={session.user.theme === 'dark' ? 'dark' : 'light'}
